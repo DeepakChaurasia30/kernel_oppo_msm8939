@@ -1,4 +1,4 @@
- /* Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ /* Copyright (c) 2014-2016, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -37,12 +37,19 @@
 #include "../codecs/wcd9335.h"
 #include "msm-audio-pinctrl.h"
 #include "../codecs/wsa881x.h"
+#ifdef CONFIG_MACH_OPPO
+#include <soc/oppo/oppo_project.h>
+#endif
 
 #define DRV_NAME "msm8x16-asoc-wcd"
 
 #define BTSCO_RATE_8KHZ 8000
 #define BTSCO_RATE_16KHZ 16000
+#ifdef CONFIG_MACH_OPPO
+#define MAX_SND_CARDS 4
+#else
 #define MAX_SND_CARDS 2
+#endif
 
 #define SAMPLING_RATE_8KHZ      8000
 #define SAMPLING_RATE_16KHZ     16000
@@ -55,6 +62,9 @@
 #define SEC_MI2S_ID	(1 << 1)
 #define TER_MI2S_ID	(1 << 2)
 #define QUAT_MI2S_ID (1 << 3)
+#ifdef CONFIG_MACH_OPPO
+#define QUAT_SEC_MI2S_ID (QUAT_MI2S_ID | SEC_MI2S_ID)
+#endif
 
 #define LPASS_CSR_GP_IO_MUX_MIC_CTL 0x07702000
 #define LPASS_CSR_GP_IO_MUX_SPKR_CTL 0x07702004
@@ -66,14 +76,6 @@
 #define WCD_MBHC_DEF_RLOADS 5
 
 #define LPASS_CSR_GP_LPAIF_PRI_PCM_PRI_MODE_MUXSEL 0x07702008
-#define EXT_CLASS_D_EN_DELAY 13000
-#define EXT_CLASS_D_DELAY_DELTA 2000
-
-#define AW8155A_MODE 3
-
-static struct delayed_work lineout_amp_enable;
-static struct delayed_work lineout_amp_dualmode;
-static struct delayed_work lineout_amp_disable;
 
 #define MAX_AUX_CODECS	2
 
@@ -112,18 +114,27 @@ static void *def_tasha_mbhc_cal(void);
 static struct wcd_mbhc_config mbhc_cfg = {
 	.read_fw_bin = false,
 	.calibration = NULL,
+#ifdef CONFIG_MACH_OPPO
+	.detect_extn_cable = false,
+#else
 	.detect_extn_cable = true,
+#endif
 	.mono_stero_detection = false,
 	.swap_gnd_mic = NULL,
 	.hs_ext_micbias = false,
 	.key_code[0] = KEY_MEDIA,
-	.key_code[1] = KEY_VOLUMEUP,
-	.key_code[2] = KEY_VOLUMEDOWN,
-	.key_code[3] = KEY_VOICECOMMAND,
-	.key_code[4] = KEY_VOLUMEDOWN,
+	.key_code[1] = KEY_VOICECOMMAND,
+	.key_code[2] = KEY_VOLUMEUP,
+	.key_code[3] = KEY_VOLUMEDOWN,
+	.key_code[4] = 0,
 	.key_code[5] = 0,
 	.key_code[6] = 0,
 	.key_code[7] = 0,
+#ifdef CONFIG_MACH_OPPO
+	.linein_th = 0,
+#else
+	.linein_th = 5000,
+#endif
 };
 
 static struct wcd_mbhc_config wcd_mbhc_cfg = {
@@ -393,6 +404,11 @@ static void param_set_mask(struct snd_pcm_hw_params *p, int n, unsigned bit)
 static int msm8x16_mclk_event(struct snd_soc_dapm_widget *w,
 			      struct snd_kcontrol *kcontrol, int event);
 
+#ifdef CONFIG_MACH_OPPO
+static int msm8x16_dmic_event(struct snd_soc_dapm_widget *w,
+		struct snd_kcontrol *kcontrol, int event);
+#endif
+
 static const struct snd_soc_dapm_widget msm8x16_dapm_widgets[] = {
 
 	SND_SOC_DAPM_SUPPLY_S("MCLK", -1, SND_SOC_NOPM, 0, 0,
@@ -401,8 +417,13 @@ static const struct snd_soc_dapm_widget msm8x16_dapm_widgets[] = {
 	SND_SOC_DAPM_MIC("Headset Mic", NULL),
 	SND_SOC_DAPM_MIC("Secondary Mic", NULL),
 	SND_SOC_DAPM_MIC("Digital Mic0", NULL),
+#ifdef CONFIG_MACH_OPPO
+	SND_SOC_DAPM_MIC("Digital Mic1", msm8x16_dmic_event),
+	SND_SOC_DAPM_MIC("Digital Mic2", msm8x16_dmic_event),
+#else
 	SND_SOC_DAPM_MIC("Digital Mic1", NULL),
 	SND_SOC_DAPM_MIC("Digital Mic2", NULL),
+#endif
 	SND_SOC_DAPM_MIC("Digital Mic3", NULL),
 };
 
@@ -417,7 +438,6 @@ static char const *rx_bit_format_text[] = {"S16_LE", "S24_LE"};
 static const char *const mi2s_tx_ch_text[] = {"One", "Two", "Three", "Four"};
 static char const *mi2s_rx_sample_rate_text[] = {"KHZ_48", "KHZ_96", "KHZ_192"};
 static const char *const loopback_mclk_text[] = {"DISABLE", "ENABLE"};
-static const char *const lineout_text[] = {"DISABLE", "ENABLE", "DUALMODE"};
 static char const *pri_rx_sample_rate_text[] = {"KHZ_48", "KHZ_96",
 					"KHZ_192", "KHZ_8",
 					"KHZ_16", "KHZ_32"};
@@ -536,6 +556,28 @@ static int msm_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 
 	return 0;
 }
+
+#if defined(CONFIG_MACH_15011) || \
+    defined(CONFIG_MACH_15018) || defined(CONFIG_MACH_15022)
+static int msm_be_tfa9890_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
+					  struct snd_pcm_hw_params *params)
+{
+	struct snd_interval *rate = hw_param_interval(params,
+					SNDRV_PCM_HW_PARAM_RATE);
+	struct snd_interval *channels = hw_param_interval(params,
+					SNDRV_PCM_HW_PARAM_CHANNELS);
+
+	pr_debug("%s()\n", __func__);
+	rate->min = rate->max = mi2s_rx_sample_rate;
+	param_set_mask(params, SNDRV_PCM_HW_PARAM_FORMAT,
+					SNDRV_PCM_FORMAT_S16_LE);
+
+	if (!channels->min)
+		channels->min = channels->max = 2;
+
+	return 0;
+}
+#endif
 
 static int mi2s_rx_sample_rate_get(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
@@ -738,91 +780,6 @@ static int loopback_mclk_put(struct snd_kcontrol *kcontrol,
 		break;
 	}
 	return ret;
-}
-
-static void msm8x16_ext_spk_delayed_enable(struct work_struct *work)
-{
-	int i = 0;
-
-	gpio_direction_output(EXT_SPK_AMP_HEADSET_GPIO, false);
-	usleep_range(EXT_CLASS_D_EN_DELAY,
-			EXT_CLASS_D_EN_DELAY + EXT_CLASS_D_DELAY_DELTA);
-
-	for (i = 0; i < AW8155A_MODE; i++) {
-		gpio_direction_output(EXT_SPK_AMP_GPIO, false);
-                gpio_direction_output(EXT_SPK_AMP_GPIO_1, false);
-		gpio_direction_output(EXT_SPK_AMP_GPIO, true);
-        	gpio_direction_output(EXT_SPK_AMP_GPIO_1, true);
-	}
-	usleep_range(EXT_CLASS_D_EN_DELAY,
-			EXT_CLASS_D_EN_DELAY + EXT_CLASS_D_DELAY_DELTA);
-
-}
-static void msm8x16_ext_spk_delayed_dualmode(struct work_struct *work)
-{
-	int i = 0;
-
-	gpio_direction_output(EXT_SPK_AMP_HEADSET_GPIO, true);
-	usleep_range(EXT_CLASS_D_EN_DELAY,
-			EXT_CLASS_D_EN_DELAY + EXT_CLASS_D_DELAY_DELTA);
-
-	for (i = 0; i < AW8155A_MODE; i++) {
-		gpio_direction_output(EXT_SPK_AMP_GPIO, false);
-         	gpio_direction_output(EXT_SPK_AMP_GPIO_1, false);
-		gpio_direction_output(EXT_SPK_AMP_GPIO, true);
-         	gpio_direction_output(EXT_SPK_AMP_GPIO_1, true);
-	}
-	usleep_range(EXT_CLASS_D_EN_DELAY,
-			EXT_CLASS_D_EN_DELAY + EXT_CLASS_D_DELAY_DELTA);
-
-}
-
-static void msm8x16_ext_spk_delayed_disable(struct work_struct *work)
-{
-    int i = 0;
-
-    /* Close the headset device */
-    gpio_direction_output(EXT_SPK_AMP_HEADSET_GPIO, false);
-    usleep_range(EXT_CLASS_D_EN_DELAY,
-        EXT_CLASS_D_EN_DELAY + EXT_CLASS_D_DELAY_DELTA);
-
-    /* Close external audio PA device */
-    for(i = 0; i < AW8155A_MODE; i++) {
-        gpio_direction_output(EXT_SPK_AMP_GPIO, false);
-        gpio_direction_output(EXT_SPK_AMP_GPIO_1, false);
-    }
-    usleep_range(EXT_CLASS_D_EN_DELAY,
-        EXT_CLASS_D_EN_DELAY + EXT_CLASS_D_DELAY_DELTA);
-
-    pr_debug("%s: Disable external speaker PAs.\n", __func__);
-}
-
-static int lineout_status_get(struct snd_kcontrol *kcontrol,
-	struct snd_ctl_elem_value *ucontrol)
-{
-	return 0;
-}
-static int lineout_status_put(struct snd_kcontrol *kcontrol,
-	struct snd_ctl_elem_value *ucontrol)
-{
-	int state = 0;
-	state = ucontrol->value.integer.value[0];
-
-	switch (state) {
-        case 0:
-		schedule_delayed_work(&lineout_amp_disable, msecs_to_jiffies(50));
-		break;
-	case 1:
-		schedule_delayed_work(&lineout_amp_enable, msecs_to_jiffies(50));
-		break;
-	case 2:
-		schedule_delayed_work(&lineout_amp_dualmode, msecs_to_jiffies(50));
-		break;
-	default:
-		pr_err("%s: Unexpected input value\n", __func__);
-		break;
-	}
-	return 0;
 }
 
 static int msm_btsco_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
@@ -1068,6 +1025,24 @@ static int msm_mi2s_snd_hw_params(struct snd_pcm_substream *substream,
 	param_set_mask(params, SNDRV_PCM_HW_PARAM_FORMAT, mi2s_rx_bit_format);
 	return 0;
 }
+
+#if defined(CONFIG_MACH_15011) || \
+    defined(CONFIG_MACH_15018) || defined(CONFIG_MACH_15022)
+static int msm_tfa9890_snd_hw_params(struct snd_pcm_substream *substream,
+				     struct snd_pcm_hw_params *params)
+{
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+	struct snd_soc_dai *codec_dai = rtd->codec_dai;
+	int ret;
+
+	ret = snd_soc_dai_set_sysclk(codec_dai, 0,
+			Q6AFE_LPASS_IBIT_CLK_1_P536_MHZ, SND_SOC_CLOCK_IN);
+	if (ret < 0)
+		pr_err("can't set rx codec clk configuration\n");
+
+	return ret;
+}
+#endif
 
 static uint32_t get_mi2s_rx_clk_val(void)
 {
@@ -1332,7 +1307,6 @@ static const struct soc_enum msm_snd_enum[] = {
 	SOC_ENUM_SINGLE_EXT(2, rx_bit_format_text),
 	SOC_ENUM_SINGLE_EXT(4, mi2s_tx_ch_text),
 	SOC_ENUM_SINGLE_EXT(2, loopback_mclk_text),
-	SOC_ENUM_SINGLE_EXT(3, lineout_text),
 	SOC_ENUM_SINGLE_EXT(6, pri_rx_sample_rate_text),
 	SOC_ENUM_SINGLE_EXT(6, mi2s_tx_sample_rate_text),
 	SOC_ENUM_SINGLE_EXT(2, mi2s_rx_sample_rate_text),
@@ -1354,9 +1328,7 @@ static const struct snd_kcontrol_new msm_snd_controls[] = {
 	SOC_ENUM_EXT("Loopback MCLK", msm_snd_enum[2],
 			loopback_mclk_get, loopback_mclk_put),
 	SOC_ENUM_EXT("Internal BTSCO SampleRate", msm_btsco_enum[0],
-			msm_btsco_rate_get, msm_btsco_rate_put),
-	SOC_ENUM_EXT("Lineout_1 amp", msm_snd_enum[3],
-			lineout_status_get, lineout_status_put),
+		     msm_btsco_rate_get, msm_btsco_rate_put),
 	SOC_ENUM_EXT("RX SampleRate", msm_snd_enum[3],
 			pri_rx_sample_rate_get, pri_rx_sample_rate_put),
 	SOC_ENUM_EXT("MI2S TX SampleRate", msm_snd_enum[4],
@@ -1403,6 +1375,37 @@ static int msm8x16_mclk_event(struct snd_soc_dapm_widget *w,
 	}
 	return 0;
 }
+
+#ifdef CONFIG_MACH_OPPO
+static int msm8x16_dmic_event(struct snd_soc_dapm_widget *w,
+		struct snd_kcontrol *kcontrol, int event)
+{
+	struct msm8916_asoc_mach_data *pdata = NULL;
+	int ret = 0;
+
+	pdata = snd_soc_card_get_drvdata(w->codec->card);
+	pr_debug("%s: event = %d\n", __func__, event);
+	switch (event) {
+	case SND_SOC_DAPM_PRE_PMU:
+		ret = pinctrl_select_state(pinctrl_info.pinctrl,
+				pinctrl_info.cdc_lines_act);
+		if (ret < 0)
+			pr_err("%s: error during pinctrl state select\n",
+					__func__);
+		break;
+	case SND_SOC_DAPM_POST_PMD:
+		ret = pinctrl_select_state(pinctrl_info.pinctrl,
+				pinctrl_info.cdc_lines_sus);
+		if (ret < 0)
+			pr_err("%s: error during pinctrl state select\n",
+					__func__);
+		break;
+	default:
+		return -EINVAL;
+	}
+	return 0;
+}
+#endif
 
 static void msm_mi2s_snd_shutdown(struct snd_pcm_substream *substream)
 {
@@ -1523,6 +1526,11 @@ static int msm_sec_mi2s_snd_startup(struct snd_pcm_substream *substream)
 	struct snd_soc_codec *codec = rtd->codec;
 	struct msm8916_asoc_mach_data *pdata =
 			snd_soc_card_get_drvdata(card);
+#if defined(CONFIG_MACH_15011) || defined(CONFIG_MACH_15018) || \
+    defined(CONFIG_MACH_15022)
+	struct snd_soc_dai *codec_dai = rtd->codec_dai;
+#endif
+
 	int ret = 0;
 	pr_debug("%s(): substream = %s  stream = %d\n", __func__,
 				substream->name, substream->stream);
@@ -1562,6 +1570,16 @@ static int msm_sec_mi2s_snd_startup(struct snd_pcm_substream *substream)
 	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_CBS_CFS);
 	if (ret < 0)
 		pr_debug("%s: set fmt cpu dai failed\n", __func__);
+
+#if defined(CONFIG_MACH_15011) || defined(CONFIG_MACH_15018) || \
+    defined(CONFIG_MACH_15022)
+	snd_soc_dai_set_sysclk(codec_dai, 0, 12288000, SND_SOC_CLOCK_IN);
+
+	ret = snd_soc_dai_set_fmt(codec_dai,
+			SND_SOC_DAIFMT_CBS_CFS | SND_SOC_DAIFMT_I2S);
+	if (ret < 0)
+		pr_debug("%s: set fmt codec dai failed\n", __func__);
+#endif
 
 	return ret;
 err1:
@@ -1847,8 +1865,6 @@ static int msm_mi2s_snd_startup(struct snd_pcm_substream *substream)
 	if (ret < 0)
 		pr_err("%s: set fmt cpu dai failed; ret=%d\n", __func__, ret);
 
-	pr_debug("%s() exit: substream = %s  stream = %d\n", __func__,
-		 substream->name, substream->stream);
 	return ret;
 }
 
@@ -1866,7 +1882,7 @@ static void *def_msm8x16_wcd_mbhc_cal(void)
 	}
 
 #define S(X, Y) ((WCD_MBHC_CAL_PLUG_TYPE_PTR(msm8x16_wcd_cal)->X) = (Y))
-	S(v_hs_max,1700);
+	S(v_hs_max, 1500);
 #undef S
 #define S(X, Y) ((WCD_MBHC_CAL_BTN_DET_PTR(msm8x16_wcd_cal)->X) = (Y))
 	S(num_btn, WCD_MBHC_DEF_BUTTONS);
@@ -1889,16 +1905,34 @@ static void *def_msm8x16_wcd_mbhc_cal(void)
 	 * 210-290 == Button 2
 	 * 360-680 == Button 3
 	 */
-	btn_low[0] = 87;
-	btn_high[0] = 87;
-	btn_low[1] = 255;
-	btn_high[1] = 237;
-	btn_low[2] = 325;
-	btn_high[2] = 400;
-	btn_low[3] = 425;
-	btn_high[3] = 575;
-	btn_low[4] = 525;
-        btn_high[4] = 735;
+#ifdef CONFIG_MACH_OPPO
+	btn_low[0] = 25;
+	btn_high[0] = 137;
+	btn_low[1] = 137;
+	btn_high[1] = 138;
+	btn_low[2] = 138;
+	btn_high[2] = 139;
+	btn_low[3] = 139;
+	btn_high[3] = 140;
+	if (is_project(OPPO_15011) || is_project(OPPO_15018) ||
+	    is_project(OPPO_15022)) {
+		btn_low[4] = 175;
+	} else {
+		btn_low[4] = 140;
+	}
+	btn_high[4] = 315;
+#else
+	btn_low[0] = 75;
+	btn_high[0] = 75;
+	btn_low[1] = 150;
+	btn_high[1] = 150;
+	btn_low[2] = 237;
+	btn_high[2] = 237;
+	btn_low[3] = 450;
+	btn_high[3] = 450;
+	btn_low[4] = 500;
+	btn_high[4] = 500;
+#endif
 
 	return msm8x16_wcd_cal;
 }
@@ -1947,9 +1981,6 @@ static int msm_audrx_init(struct snd_soc_pcm_runtime *rtd)
 			return ret;
 		}
 	}
-	INIT_DELAYED_WORK(&lineout_amp_enable, msm8x16_ext_spk_delayed_enable);
-	INIT_DELAYED_WORK(&lineout_amp_dualmode, msm8x16_ext_spk_delayed_dualmode);
-        INIT_DELAYED_WORK(&lineout_amp_disable, msm8x16_ext_spk_delayed_disable);
 	return msm8x16_wcd_hs_detect(codec, &mbhc_cfg);
 }
 
@@ -2012,6 +2043,15 @@ static int msm_audrx_init_wcd(struct snd_soc_pcm_runtime *rtd)
 
 	return ret;
 }
+
+#if defined(CONFIG_MACH_15011) || \
+    defined(CONFIG_MACH_15018) || defined(CONFIG_MACH_15022)
+static struct snd_soc_ops msm8x16_tfa9890_be_ops = {
+	.startup = msm_quat_mi2s_snd_startup,
+	.hw_params = msm_tfa9890_snd_hw_params,
+	.shutdown = msm_quat_mi2s_snd_shutdown,
+};
+#endif
 
 static struct snd_soc_ops msm8x16_quat_mi2s_be_ops = {
 	.startup = msm_quat_mi2s_snd_startup,
@@ -2092,18 +2132,6 @@ static struct snd_soc_dai_link msm8x16_9326_dai[] = {
 		.codec_dai_name = "tasha_mad1",
 		.codec_name = "tasha_codec",
 	},
-	{
-		.name = LPASS_BE_AFE_LOOPBACK_TX,
-		.stream_name = "AFE Loopback Capture",
-		.cpu_dai_name = "msm-dai-q6-dev.24577",
-		.platform_name = "msm-pcm-routing",
-		.codec_name = "msm-stub-codec.1",
-		.codec_dai_name = "msm-stub-tx",
-		.no_pcm = 1,
-		.be_id = MSM_BACKEND_DAI_AFE_LOOPBACK_TX,
-		.ignore_pmdown_time = 1,
-		.ignore_suspend = 1,
-	},
 };
 
 static struct snd_soc_aux_dev msm8909_aux_dev[] = {
@@ -2130,6 +2158,22 @@ static struct snd_soc_codec_conf msm8909_codec_conf[] = {
 	},
 };
 
+#if defined(CONFIG_MACH_15011) || defined(CONFIG_MACH_15018) || \
+    defined(CONFIG_MACH_15022)
+static int ak4375_audrx_init(struct snd_soc_pcm_runtime *rtd)
+{
+	struct snd_soc_codec *codec = rtd->codec;
+	struct snd_soc_dapm_context *dapm = &codec->dapm;
+
+	snd_soc_dapm_ignore_suspend(dapm, "AK4375 HPL");
+	snd_soc_dapm_ignore_suspend(dapm, "AK4375 HPR");
+
+	snd_soc_dapm_sync(dapm);
+
+	return 0;
+}
+#endif
+
 static struct snd_soc_dai_link msm8x16_wcd_dai[] = {
 	/* Backend DAI Links */
 	{
@@ -2137,12 +2181,24 @@ static struct snd_soc_dai_link msm8x16_wcd_dai[] = {
 		.stream_name = "Quaternary MI2S Playback",
 		.cpu_dai_name = "msm-dai-q6-mi2s.3",
 		.platform_name = "msm-pcm-routing",
+#if defined(CONFIG_MACH_15011) || \
+    defined(CONFIG_MACH_15018) || defined(CONFIG_MACH_15022)
+		.codec_dai_name = "tfa9890_codec_left",
+		.codec_name = "tfa9890.3-0036",
+#else
 		.codec_dai_name = "snd-soc-dummy-dai",
 		.codec_name = "snd-soc-dummy",
+#endif
 		.no_pcm = 1,
 		.be_id = MSM_BACKEND_DAI_QUATERNARY_MI2S_RX,
+#if defined(CONFIG_MACH_15011) || \
+    defined(CONFIG_MACH_15018) || defined(CONFIG_MACH_15022)
+		.be_hw_params_fixup = msm_be_tfa9890_hw_params_fixup,
+		.ops = &msm8x16_tfa9890_be_ops,
+#else
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ops = &msm8x16_quat_mi2s_be_ops,
+#endif
 		.ignore_pmdown_time = 1, /* dai link has playback support */
 		.ignore_suspend = 1,
 	},
@@ -2178,10 +2234,20 @@ static struct snd_soc_dai_link msm8x16_wcd_dai[] = {
 		.stream_name = "Secondary MI2S Playback",
 		.cpu_dai_name = "msm-dai-q6-mi2s.1",
 		.platform_name = "msm-pcm-routing",
+#if defined(CONFIG_MACH_15011) || defined(CONFIG_MACH_15018) || \
+    defined(CONFIG_MACH_15022)
+		.codec_name = "ak4375.3-0010",
+		.codec_dai_name = "ak4375-AIF1",
+#else
 		.codec_name = "msm-stub-codec.1",
 		.codec_dai_name = "msm-stub-rx",
+#endif
 		.no_pcm = 1,
 		.be_id = MSM_BACKEND_DAI_SECONDARY_MI2S_RX,
+#if defined(CONFIG_MACH_15011) || defined(CONFIG_MACH_15018) || \
+    defined(CONFIG_MACH_15022)
+		.init = ak4375_audrx_init,
+#endif
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ops = &msm8x16_sec_mi2s_be_ops,
 		.ignore_suspend = 1,
@@ -2603,6 +2669,22 @@ static struct snd_soc_dai_link msm8x16_dai[] = {
 		.codec_dai_name = "snd-soc-dummy-dai",
 		.codec_name = "snd-soc-dummy",
 	},
+	{ /* hw:x, 26 */
+		.name = "QCHAT",
+		.stream_name = "QCHAT",
+		.cpu_dai_name   = "QCHAT",
+		.platform_name  = "msm-pcm-voice",
+		.dynamic = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+				SND_SOC_DPCM_TRIGGER_POST},
+		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
+		.ignore_suspend = 1,
+		/* this dainlink has playback support */
+		.ignore_pmdown_time = 1,
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
+		.be_id = MSM_FRONTEND_DAI_QCHAT,
+	},
 	{/* hw:x,27 */
 		.name = "VoiceMMode1",
 		.stream_name = "VoiceMMode1",
@@ -2632,51 +2714,6 @@ static struct snd_soc_dai_link msm8x16_dai[] = {
 		.codec_dai_name = "snd-soc-dummy-dai",
 		.codec_name = "snd-soc-dummy",
 		.be_id = MSM_FRONTEND_DAI_VOICEMMODE2,
-	},
-        {/* hw:x,29 */
-		.name = "MSM8X16 Compress1",
-		.stream_name = "Compress1",
-		.cpu_dai_name	= "MultiMedia17",
-		.platform_name  = "msm-compress-dsp",
-		.dynamic = 1,
-		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
-			 SND_SOC_DPCM_TRIGGER_POST},
-		.codec_dai_name = "snd-soc-dummy-dai",
-		.codec_name = "snd-soc-dummy",
-		.ignore_suspend = 1,
-		.ignore_pmdown_time = 1,
-		 /* this dai link has playback support */
-		.be_id = MSM_FRONTEND_DAI_MULTIMEDIA17,
-	},
-	{/* hw:x,30 */
-		.name = "MSM8X16 Compress2",
-		.stream_name = "Compress2",
-		.cpu_dai_name	= "MultiMedia18",
-		.platform_name  = "msm-compress-dsp",
-		.dynamic = 1,
-		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
-			 SND_SOC_DPCM_TRIGGER_POST},
-		.codec_dai_name = "snd-soc-dummy-dai",
-		.codec_name = "snd-soc-dummy",
-		.ignore_suspend = 1,
-		.ignore_pmdown_time = 1,
-		 /* this dai link has playback support */
-		.be_id = MSM_FRONTEND_DAI_MULTIMEDIA18,
-	},
-	{/* hw:x,31 */
-		.name = "MSM8X16 Compress3",
-		.stream_name = "Compress3",
-		.cpu_dai_name	= "MultiMedia19",
-		.platform_name  = "msm-compress-dsp",
-		.dynamic = 1,
-		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
-			 SND_SOC_DPCM_TRIGGER_POST},
-		.codec_dai_name = "snd-soc-dummy-dai",
-		.codec_name = "snd-soc-dummy",
-		.ignore_suspend = 1,
-		.ignore_pmdown_time = 1,
-		 /* this dai link has playback support */
-		.be_id = MSM_FRONTEND_DAI_MULTIMEDIA19,
 	},
 	/* Primary AUX PCM Backend DAI Links */
 	{
@@ -3048,6 +3085,24 @@ int get_cdc_gpio_lines(struct pinctrl *pinctrl, int ext_pa)
 		if (ret < 0)
 			pr_err("failed to enable codec gpios\n");
 		break;
+#ifdef CONFIG_MACH_OPPO
+	case QUAT_SEC_MI2S_ID:
+		pinctrl_info.cdc_lines_sus = pinctrl_lookup_state(pinctrl,
+			"cdc_lines_quat_sec_ext_sus");
+		if (IS_ERR(pinctrl_info.cdc_lines_sus)) {
+			pr_err("%s: Unable to get pinctrl disable state handle\n",
+								__func__);
+			return -EINVAL;
+		}
+		pinctrl_info.cdc_lines_act = pinctrl_lookup_state(pinctrl,
+			"cdc_lines_quat_sec_ext_act");
+		if (IS_ERR(pinctrl_info.cdc_lines_act)) {
+			pr_err("%s: Unable to get pinctrl disable state handle\n",
+								__func__);
+			return -EINVAL;
+		}
+		break;
+#endif
 	default:
 		pinctrl_info.cdc_lines_sus = pinctrl_lookup_state(pinctrl,
 			"cdc_lines_sus");
@@ -3326,7 +3381,7 @@ static int msm8x16_asoc_machine_probe(struct platform_device *pdev)
 	if (!pdata) {
 		dev_err(&pdev->dev, "Can't allocate msm8x16_asoc_mach_data\n");
 		ret = -ENOMEM;
-		goto err;
+		goto err1;
 	}
 
 	pdata->vaddr_gpio_mux_spkr_ctl =
@@ -3559,6 +3614,7 @@ err:
 	if (pdata->vaddr_gpio_mux_pcm_ctl)
 		iounmap(pdata->vaddr_gpio_mux_pcm_ctl);
 	devm_kfree(&pdev->dev, pdata);
+err1:
 	return ret;
 }
 
