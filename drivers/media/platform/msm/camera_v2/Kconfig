@@ -200,6 +200,12 @@ config SP1628
 		1280 * 270. It does not support auto focus. It supports
 		few special effects like mono.
 
+config S5K3H7
+	bool "Sensor s5k3h7 (Samsung 8M 4 lanes)"
+	depends on MSMB_CAMERA
+	---help---
+	  Samsung 8M with Autofocus
+
 config GC0339
 	bool "Sensor GC0339 (BAYER .3M)"
 	depends on MSMB_CAMERA
