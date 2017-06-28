@@ -882,8 +882,14 @@ static int32_t msm_cci_config(struct v4l2_subdev *sd,
 	struct msm_camera_cci_ctrl *cci_ctrl)
 {
 	int32_t rc = 0;
+	struct cci_device *cci_dev;
+
 	CDBG("%s line %d cmd %d\n", __func__, __LINE__,
 		cci_ctrl->cmd);
+
+	cci_dev = v4l2_get_subdevdata(sd);
+	mutex_lock(&cci_dev->mutex);
+
 	switch (cci_ctrl->cmd) {
 	case MSM_CCI_INIT:
 		rc = msm_cci_init(sd, cci_ctrl);
@@ -892,10 +898,18 @@ static int32_t msm_cci_config(struct v4l2_subdev *sd,
 		rc = msm_cci_release(sd);
 		break;
 	case MSM_CCI_I2C_READ:
-		rc = msm_cci_i2c_read_bytes(sd, cci_ctrl);
+		if (cci_dev->cci_state == CCI_STATE_DISABLED) {
+			pr_err("%s %d: CCI_STATE_DISABLED", __func__, __LINE__);
+		} else {
+			rc = msm_cci_i2c_read_bytes(sd, cci_ctrl);
+		}
 		break;
 	case MSM_CCI_I2C_WRITE:
-		rc = msm_cci_i2c_write(sd, cci_ctrl);
+		if (cci_dev->cci_state == CCI_STATE_DISABLED) {
+			pr_err("%s %d: CCI_STATE_DISABLED", __func__, __LINE__);
+		} else {
+			rc = msm_cci_i2c_write(sd, cci_ctrl);
+		}
 		break;
 	case MSM_CCI_GPIO_WRITE:
 		break;
@@ -904,6 +918,9 @@ static int32_t msm_cci_config(struct v4l2_subdev *sd,
 	}
 	CDBG("%s line %d rc %d\n", __func__, __LINE__, rc);
 	cci_ctrl->status = rc;
+
+	mutex_unlock(&cci_dev->mutex);
+
 	return rc;
 }
 
@@ -1032,6 +1049,7 @@ static void msm_cci_init_cci_params(struct cci_device *new_cci_dev)
 					max_queue_size = CCI_I2C_QUEUE_1_SIZE;
 			}
 	}
+	mutex_init(&new_cci_dev->mutex);
 	return;
 }
 
