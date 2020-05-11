@@ -17,6 +17,9 @@
 enum {
 	MSM_BOOT_MODE__NORMAL,
 	MSM_BOOT_MODE__RECOVERY,
+    MSM_BOOT_MODE__FACTORY,
+    MSM_BOOT_MODE__RF,
+    MSM_BOOT_MODE__WLAN,
 };
 
 int get_boot_mode(void);
