@@ -1,0 +1,39 @@
+/* Copyright (c) 2020, The Linux Foundation. All rights reserved.
+*  Copyright (c) 2020, the_shahnawaz_sheikh (sheikhshahnawaz41299).
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License version 2 and
+* only version 2 as published by the Free Software Foundation.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
+
+/* Memory accelerator and CPR controlled regulators */
+
+&soc {
+	regulator@b018000 {
+	    regulator-max-microvolt = <8>;
+		vdd-apc-optional-prim-supply = <&ncp6335d_regulator>;
+		qcom,cpr-step-quotient = <26>;
+		qcom,cpr-up-threshold = <0>;
+		qcom,cpr-down-threshold = <2>;
+		qcom,cpr-apc-volt-step = <12500>;
+		
+	    qcom,cpr-corner-map = <1 1 2 2 3 3 3 3>;
+	    qcom,cpr-corner-frequency-map = <1 200000000>,
+	                                 <2 400000000>,
+	                                 <3 533330000>,
+	                                 <4 800000000>,
+	                                 <5 998400000>,
+	                                 <6 1094400000>,
+	                                 <7 1152000000>,
+	                                 <8 1209600000>;
+	    qcom,speed-bin-fuse-sel = <0 55 2 0>;
+	    qcom,cpr-speed-bin-max-corners = <0 0 2 4 8>,
+	                                    <1 0 2 4 7>;
+	};
+};
+
