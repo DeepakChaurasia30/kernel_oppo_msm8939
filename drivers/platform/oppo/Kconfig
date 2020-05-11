@@ -53,4 +53,11 @@ config MACH_15109
 	help
 	  Support for the F1f variant
 
+config MACH_15399
+	bool "A37f board"
+ 	select MACH_OPPO_MSM8939
+	select SND_SOC_TS4621
+	help
+	   Support for the A37f variant
+
 endmenu
