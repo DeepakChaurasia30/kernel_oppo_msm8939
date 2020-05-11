@@ -604,7 +604,7 @@ static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 		break;
 	}
 #if defined(CONFIG_MACH_OPPO) && defined(CONFIG_BACKLIGHT_LM3630)
-	if (is_project(OPPO_15109))
+	if (is_project(OPPO_15109)||is_project(OPPO_15399))
 		lm3630_bank_a_update_status(bl_level);
 #endif
 }
