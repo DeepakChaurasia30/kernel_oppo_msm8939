@@ -109,6 +109,7 @@
 			st,g-range = <2>;
 			st,negate-x;
 			st,negate-z;
+            status = "ok";
 		};
 
 		memsic@30 { /* Magnetic field sensor */
