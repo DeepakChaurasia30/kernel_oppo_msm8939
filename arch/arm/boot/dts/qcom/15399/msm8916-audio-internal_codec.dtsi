@@ -17,7 +17,7 @@
 	sound {
 		qcom,msm-mclk-freq = <9600000>;
 		qcom,msm-mbhc-hphl-swh = <1>;
-		qcom,msm-hs-micbias-type = "internal";
+		qcom,msm-hs-micbias-type = "external";
 		qcom,msm-micbias2-ext-cap;
 		qcom,audio-routing =
 			"RX_BIAS", "MCLK",
@@ -29,24 +29,12 @@
 			"AMIC1", "MIC BIAS External",
 			"AMIC2", "MIC BIAS External2",
 			"AMIC3", "MIC BIAS External";
-		/*the_shahnawaz_sheikh, 2020, add for after evt2 headset compatible*/
-		qcom,audio-routing-15009-after-evt2 = "RX_BIAS", "MCLK",
-		     "SPK_RX_BIAS", "MCLK",
-			 "INT_LDO_H", "MCLK",
-			 "MIC BIAS External", "Handset Mic",
-			 "MIC BIAS External2", "Headset Mic",
-			 "MIC BIAS External", "Secondary Mic",
-			 "AMIC1", "MIC BIAS External",
-			 "AMIC2", "MIC BIAS External2",
-			 "AMIC3", "MIC BIAS External";
-		/*the_shahnawaz_sheikh, Modify end*/
 		/delete-property/ qcom,cdc-us-euro-gpios;
 		spk-pa-en = <&msm_gpio 120 0x00>;
 		yda145_boost-en = <&msm_gpio 118 0x00>;
-		/*the_shahnawaz_sheikh, add for after evt2 headset compatible*/
-    	pcb-ver-flag0 = <&msm_gpio 50 0x00>;
-    	pcb-ver-flag1 = <&msm_gpio 51 0x00>;
-    	pcb-ver-flag2 = <&msm_gpio 52 0x00>;
+	pcb-ver-flag0 = <&msm_gpio 50 0x00>;
+	pcb-ver-flag1 = <&msm_gpio 51 0x00>;
+	pcb-ver-flag2 = <&msm_gpio 52 0x00>;
         /*the_shahnawaz_sheikh, Add end*/
 	};
 };
