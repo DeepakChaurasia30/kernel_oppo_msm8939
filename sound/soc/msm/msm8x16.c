@@ -1990,7 +1990,7 @@ static void *def_msm8x16_wcd_mbhc_cal(void)
 	btn_low[3] = 139;
 	btn_high[3] = 140;
 /*ping.zhang@Multimedia, 2015/06/10, Modify for selfiestick*/
-	if (is_project(OPPO_15109))
+	if (is_project(OPPO_15109) || is_project(OPPO_15399))
 		btn_low[4] = 175;
 	else if (is_project(OPPO_15018) || is_project(OPPO_15011))
 		btn_low[4] = 240;
@@ -3178,7 +3178,7 @@ static void msm8x16_dt_parse_cap_info(struct platform_device *pdev,
 
 #ifdef CONFIG_MACH_OPPO
 //John.Xu@PhoneSw.AudioDriver, 2015/04/30, Add for 15025 headset compatible
-	if (is_project(OPPO_15109)) {
+	if (is_project(OPPO_15109) || is_project(OPPO_15399)) {
 		if (pcb_ver() != 0 && pcb_ver() != 1) {
 			pr_err("%s: 15009 hw version after EVT2, set MICBIAS_EXT_BYP_CAP mode\n", __func__);
 			pdata->micbias2_cap_mode = MICBIAS_EXT_BYP_CAP;
@@ -3688,7 +3688,7 @@ static int msm8x16_asoc_machine_probe(struct platform_device *pdev)
 
 #ifdef CONFIG_MACH_OPPO
 //John.Xu@PhoneSw.AudioDriver, 2015/04/30, Add for 15009 headset compatible
-	if (is_project(OPPO_15109)) {
+	if (is_project(OPPO_15109) || is_project(OPPO_15399)) {
 		mbhc_cfg.hs_ext_micbias = true;
 		pr_err("%s: 15037 hw version after EVT2, hs use external micbias\n", __func__);
 	}
@@ -3744,7 +3744,7 @@ static int msm8x16_asoc_machine_probe(struct platform_device *pdev)
 	}
 
 #ifdef CONFIG_MACH_OPPO
-	if (is_project(OPPO_15109)) {
+	if (is_project(OPPO_15109) || is_project(OPPO_15399)) {
 		pdata->spk_pa_en = of_get_named_gpio(pdev->dev.of_node,
 				"spk-pa-en", 0);
 		pr_err("pdata->spk_pa_en = %d\n",pdata->spk_pa_en);
