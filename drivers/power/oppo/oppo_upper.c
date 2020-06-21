@@ -103,7 +103,7 @@ static void opchg_external_power_changed(struct power_supply *psy)
 	opchg_config_input_chg_current(chip, INPUT_CURRENT_CAMERA, chip->limit_current_max_ma);
     opchg_config_input_chg_current(chip, INPUT_CURRENT_BY_POWER, current_limit);
 
-	if(is_project(OPPO_15109))
+	if(is_project(OPPO_15109)|| is_project(OPPO_15399))
 		opchg_set_input_chg_current(chip, chip->max_input_current[INPUT_CURRENT_BY_POWER], false);
 	else
 	opchg_set_input_chg_current(chip, chip->max_input_current[INPUT_CURRENT_MIN], false);

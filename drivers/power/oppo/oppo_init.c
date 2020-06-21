@@ -351,7 +351,7 @@ static int opcharger_charger_probe(struct i2c_client *client, const struct i2c_d
 			return -ENODEV;
 		}
 	}
-	if(is_project(OPPO_15109))
+	if(is_project(OPPO_15109)||is_project(OPPO_15399))
 	{
 		// do noting
 	}
@@ -406,7 +406,7 @@ static int opcharger_charger_probe(struct i2c_client *client, const struct i2c_d
     mutex_init(&chip->read_write_lock);
     mutex_init(&chip->usbin_lock);/*chaoying.chen@EXP.BaseDrv.charge,2015/08/10 add for USB recognition */
 
-	if(is_project(OPPO_15109))
+	if(is_project(OPPO_15109)||is_project(OPPO_15399))
 	{
 		opchg_chip = chip;
 	}
@@ -424,7 +424,7 @@ static int opcharger_charger_probe(struct i2c_client *client, const struct i2c_d
 
 	opchg_init_charge_parameters(chip);
 
-	if(is_project(OPPO_15109)) {
+	if(is_project(OPPO_15109)|| is_project(OPPO_15399)) {
 		if(gpio_is_valid(chip->usbin_switch_gpio)){
 			rc = gpio_request(chip->usbin_switch_gpio,"opcharger_usbin_switch");
 			if(rc)

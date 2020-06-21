@@ -492,7 +492,7 @@ int bq24196_set_input_chg_current(struct opchg_charger *chip, int iusbin_mA, boo
 	}
 
 	// add for 15109 compatible 1A and 2A charger
-	if(is_project(OPPO_15109) && (get_PCB_Version() == HW_VERSION__10||get_PCB_Version() == HW_VERSION__12||get_PCB_Version() == HW_VERSION__14||get_PCB_Version() == HW_VERSION__15))
+	if((is_project(OPPO_15109) && (get_PCB_Version() == HW_VERSION__10||get_PCB_Version() == HW_VERSION__12||get_PCB_Version() == HW_VERSION__14||get_PCB_Version() == HW_VERSION__15))||is_project(OPPO_15399))
 	{
 		//do nothing
 	}
@@ -533,7 +533,7 @@ int bq24196_set_input_chg_current(struct opchg_charger *chip, int iusbin_mA, boo
 	for(aicl_count = 0;aicl_count < AICL_MAX_COUNT;aicl_count++){
 		chg_vol = opchg_get_prop_charger_voltage_now(chip);
 		if(chg_vol < chip->sw_aicl_point){
-			if(is_project(OPPO_15109) && (get_PCB_Version() == HW_VERSION__10||get_PCB_Version() == HW_VERSION__12||get_PCB_Version() == HW_VERSION__14||get_PCB_Version() == HW_VERSION__15))
+			if((is_project(OPPO_15109) && (get_PCB_Version() == HW_VERSION__10||get_PCB_Version() == HW_VERSION__12||get_PCB_Version() == HW_VERSION__14||get_PCB_Version() == HW_VERSION__15))||is_project(OPPO_15399))
 			{
 				chip->aicl_current = CURRENT_900MA;
 			}
@@ -888,7 +888,7 @@ int bq24196_chg_uv(struct opchg_charger *chip, u8 status)
 	/*****************************************
 	* External OVP circuit sets enable switch
 	*****************************************/
-	if((is_project(OPPO_15109) && (get_PCB_Version() == HW_VERSION__10||get_PCB_Version() == HW_VERSION__12||get_PCB_Version() == HW_VERSION__14||get_PCB_Version() == HW_VERSION__15)))
+	if((is_project(OPPO_15109) && (get_PCB_Version() == HW_VERSION__10||get_PCB_Version() == HW_VERSION__12||get_PCB_Version() == HW_VERSION__14||get_PCB_Version() == HW_VERSION__15))||is_project(OPPO_15399))
 	{
 		opchg_switch_to_usbin(chip,!status);
 	}

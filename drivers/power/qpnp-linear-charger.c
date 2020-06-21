@@ -2884,7 +2884,7 @@ static int qpnp_lbc_get_irqs(struct qpnp_lbc_chip *chip, u8 subtype,
 static void determine_initial_status(struct qpnp_lbc_chip *chip)
 {
 #ifdef CONFIG_MACH_OPPO
-	if (is_project(OPPO_15109)|| is_project(OPPO_15399))
+	if (is_project(OPPO_15109)||is_project(OPPO_15399))
 		return;
 #endif
 

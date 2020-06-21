@@ -402,7 +402,7 @@ int opchg_get_prop_batt_capacity(struct opchg_charger *chip)
 {
 	int soc;
 
-	if(is_project(OPPO_15109)){
+	if(is_project(OPPO_15109)|| is_project(OPPO_15399)){
 		soc = opchg_get_prop_batt_capacity_from_bms(chip);
 	} else {
 		if (qpnp_batt_gauge && qpnp_batt_gauge->get_battery_soc){
@@ -426,7 +426,7 @@ int opchg_get_prop_current_now(struct opchg_charger *chip)
 {
 	int chg_current = 0;
 
-	if(is_project(OPPO_15109)){
+	if(is_project(OPPO_15109)|| is_project(OPPO_15399)){
 		if(!chip->chg_present){
 			chg_current = 0;
 		} else {
