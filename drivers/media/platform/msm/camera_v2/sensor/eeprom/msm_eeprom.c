@@ -999,6 +999,87 @@ static void msm_eeprom_s5k3m2_read_vendorInfo(struct msm_eeprom_ctrl_t *e_ctrl)
 }
 #endif
 
+#ifdef CONFIG_MACH_OPPO
+/* lanhe add for read s5k3h7 otp */
+static int read_eeprom_memory_3h7(struct msm_eeprom_ctrl_t *e_ctrl,
+			      struct msm_eeprom_memory_block_t *block)
+{
+	int rc = 0;
+	int j;
+	struct msm_eeprom_memory_map_t *emap = block->map;
+	struct msm_eeprom_board_info *eb_info;
+	uint8_t *memptr = block->mapdata;
+
+	if (!e_ctrl) {
+		pr_err("%s e_ctrl is NULL", __func__);
+		return -EINVAL;
+	}
+
+	eb_info = e_ctrl->eboard_info;
+
+	for (j = 0; j < block->num_map; j++) {
+		if (emap[j].saddr.addr) {
+			eb_info->i2c_slaveaddr = emap[j].saddr.addr;
+			e_ctrl->i2c_client.cci_client->sid =
+					eb_info->i2c_slaveaddr >> 1;
+			pr_err("qcom,slave-addr = 0x%X\n",
+				eb_info->i2c_slaveaddr);
+		}
+
+		if (emap[j].page.valid_size) {
+			e_ctrl->i2c_client.addr_type = emap[j].page.addr_t;
+			rc = e_ctrl->i2c_client.i2c_func_tbl->i2c_write(
+				&(e_ctrl->i2c_client), emap[j].page.addr,
+				emap[j].page.data, emap[j].page.data_t);
+				msleep(emap[j].page.delay);
+			if (rc < 0) {
+				pr_err("%s: page write failed\n", __func__);
+				return rc;
+			}
+		}
+
+		if (emap[j].pageen.valid_size) {
+			e_ctrl->i2c_client.addr_type = emap[j].pageen.addr_t;
+			rc = e_ctrl->i2c_client.i2c_func_tbl->i2c_write(
+				&(e_ctrl->i2c_client), emap[j].pageen.addr,
+				emap[j].pageen.data, emap[j].pageen.data_t);
+				msleep(emap[j].pageen.delay);
+			if (rc < 0) {
+				pr_err("%s: page enable failed\n", __func__);
+				return rc;
+			}
+		}
+
+		if (emap[j].poll.valid_size) {
+			e_ctrl->i2c_client.addr_type = emap[j].poll.addr_t;
+			rc = e_ctrl->i2c_client.i2c_func_tbl->i2c_write(
+				&(e_ctrl->i2c_client), emap[j].poll.addr,
+				emap[j].poll.data, emap[j].poll.data_t);
+				msleep(emap[j].poll.delay);
+			if (rc < 0) {
+				pr_err("%s: poll failed\n", __func__);
+				return rc;
+			}
+		}
+
+		if (emap[j].mem.valid_size) {
+			memset(memptr,0x00,emap[j].mem.valid_size);//
+			e_ctrl->i2c_client.addr_type = emap[j].mem.addr_t;
+			rc = e_ctrl->i2c_client.i2c_func_tbl->i2c_read_seq(
+				&(e_ctrl->i2c_client), emap[j].mem.addr,
+				memptr, emap[j].mem.valid_size);
+			if (rc < 0) {
+				pr_err("%s: read failed\n", __func__);
+				return rc;
+			}
+			memptr += emap[j].mem.valid_size;
+		}
+
+	}
+	return rc;
+}
+#endif
+
 static int msm_eeprom_platform_probe(struct platform_device *pdev)
 {
 	int rc = 0;
@@ -1125,6 +1206,8 @@ static int msm_eeprom_platform_probe(struct platform_device *pdev)
 #ifdef CONFIG_MACH_OPPO
 	if (strcmp(eb_info->eeprom_name, "sunny_f13s01l") == 0)
 		msm_eeprom_s5k3m2_read_vendorInfo(e_ctrl);
+        if (strcmp(eb_info->eeprom_name, "truly_s5k3h7") == 0)
+		rc = read_eeprom_memory_3h7(e_ctrl, &e_ctrl->cal_data);
 #endif
 
 	rc = read_eeprom_memory(e_ctrl, &e_ctrl->cal_data);
