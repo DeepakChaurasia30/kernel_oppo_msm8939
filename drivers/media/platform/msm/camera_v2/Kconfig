@@ -156,15 +156,6 @@ config OV5648
 		snapshot set to 2592*1944 at 12 fps,
 		This sensor driver does not support auto focus.
 
-config OV5648_BACK
-	bool "Sensor OV5648_BACK (BAYER 5M)"
-	depends on MSMB_CAMERA
-	---help---
-		OmniVision 5 MP Bayer Sensor, only use 1 mipi lane,
-		preview set to 1296*972 at 30 fps,
-		snapshot set to 2592*1944 at 12 fps,
-		This sensor driver does not support auto focus.
-
 config MT9M114
 	bool "Sensor MT9M114 (YUV 1.26MP)"
 	depends on MSMB_CAMERA
@@ -199,12 +190,6 @@ config SP1628
 		and snapshot. The preview and snapshot resolution shall be
 		1280 * 270. It does not support auto focus. It supports
 		few special effects like mono.
-
-config S5K3H7
-	bool "Sensor s5k3h7 (Samsung 8M 4 lanes)"
-	depends on MSMB_CAMERA
-	---help---
-	  Samsung 8M with Autofocus
 
 config GC0339
 	bool "Sensor GC0339 (BAYER .3M)"
