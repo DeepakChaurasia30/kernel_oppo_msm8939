@@ -28,7 +28,7 @@ make    O=out \
         CROSS_COMPILE_ARM32=arm-linux-androideabi- \
         CONFIG_NO_ERROR_ON_MISMATCH=y \
         CONFIG_DEBUG_SECTION_MISMATCH=y \
-        -j$(nproc --all)
+        -j$(nproc --all) || exit
 
 cc anykernel3/dtbtool.c -o out/arch/arm64/boot/dts/dtbtool
 cd out/arch/arm64/boot/dts
