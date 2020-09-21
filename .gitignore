@@ -9,6 +9,8 @@
 #
 # Normal rules
 #
+anykernel3/Image
+anykernel3/dt.img
 out/
 .*
 *.o
