@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2015,2017 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2014, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -18,10 +18,13 @@
 #include "msm_cci.h"
 #include "msm_camera_dt_util.h"
 
-#ifdef CONFIG_MACH_OPPO
+#ifdef VENDOR_EDIT
+/*zhengrong.zhang, 2015/04/15, add for pdaf engineer mode*/
 #include <linux/proc_fs.h>
 bool pdaf_calibration_flag = false;
 bool is_pdaf_supported = false;
+/*zhengrong.zhang, 2015/07/08, add for laser*/
+bool is_laser_supported = false;
 #endif
 
 /* Logging macro */
@@ -109,11 +112,7 @@ static int32_t msm_sensor_driver_create_i2c_v4l_subdev
 	s_ctrl->msm_sd.sd.entity.name =	s_ctrl->msm_sd.sd.name;
 	s_ctrl->sensordata->sensor_info->session_id = session_id;
 	s_ctrl->msm_sd.close_seq = MSM_SD_CLOSE_2ND_CATEGORY | 0x3;
-	rc = msm_sd_register(&s_ctrl->msm_sd);
-	if (rc < 0) {
-		pr_err("failed: msm_sd_register rc %d", rc);
-		return rc;
-	}
+	msm_sd_register(&s_ctrl->msm_sd);
 	CDBG("%s:%d\n", __func__, __LINE__);
 	return rc;
 }
@@ -143,7 +142,8 @@ static int32_t msm_sensor_driver_create_v4l_subdev
 	s_ctrl->msm_sd.sd.entity.group_id = MSM_CAMERA_SUBDEV_SENSOR;
 	s_ctrl->msm_sd.sd.entity.name = s_ctrl->msm_sd.sd.name;
 	s_ctrl->msm_sd.close_seq = MSM_SD_CLOSE_2ND_CATEGORY | 0x3;
-#ifdef CONFIG_MACH_OPPO
+#ifdef VENDOR_EDIT
+//LiuBin@Camera, 2015/07/05, Add for AT test
 	if (s_ctrl->sensordata->sensor_info->position == 0) //back sensor
 		s_ctrl->msm_sd.sd.entity.revision = 1;
 	else if (s_ctrl->sensordata->sensor_info->position == 1) //sub sensor
@@ -151,12 +151,8 @@ static int32_t msm_sensor_driver_create_v4l_subdev
 	else
 		s_ctrl->msm_sd.sd.entity.revision = 0;
 	CDBG("subdev name [%s], revision[%d] \n", s_ctrl->msm_sd.sd.name, s_ctrl->msm_sd.sd.entity.revision);
-#endif
-	rc = msm_sd_register(&s_ctrl->msm_sd);
-	if (rc < 0) {
-		pr_err("failed: msm_sd_register rc %d", rc);
-		return rc;
-	}
+#endif /* VENDOR_EDIT */
+	msm_sd_register(&s_ctrl->msm_sd);
 	msm_sensor_v4l2_subdev_fops = v4l2_subdev_fops;
 #ifdef CONFIG_COMPAT
 	msm_sensor_v4l2_subdev_fops.compat_ioctl32 =
@@ -430,11 +426,17 @@ static int32_t msm_sensor_create_pd_settings(void *setting,
 
 #ifdef CONFIG_COMPAT
 	if (is_compat_task()) {
-		rc = msm_sensor_get_pw_settings_compat(
-			pd, pu, size_down);
-		if (rc < 0) {
-			pr_err("failed");
-			return -EFAULT;
+		int i = 0;
+		struct msm_sensor_power_setting32 *power_setting_iter =
+		(struct msm_sensor_power_setting32 *)compat_ptr((
+		(struct msm_camera_sensor_slave_info32 *)setting)->
+		power_setting_array.power_setting);
+
+		for (i = 0; i < size_down; i++) {
+			pd[i].config_val = power_setting_iter[i].config_val;
+			pd[i].delay = power_setting_iter[i].delay;
+			pd[i].seq_type = power_setting_iter[i].seq_type;
+			pd[i].seq_val = power_setting_iter[i].seq_val;
 		}
 	} else
 #endif
@@ -476,7 +478,7 @@ static int32_t msm_sensor_get_power_down_settings(void *setting,
 	/* Allocate memory for power down setting */
 	pd = kzalloc(sizeof(*pd) * size_down, GFP_KERNEL);
 	if (!pd) {
-		pr_err("failed: no memory power_setting %pK", pd);
+		pr_err("failed: no memory power_setting %p", pd);
 		return -EFAULT;
 	}
 
@@ -543,7 +545,7 @@ static int32_t msm_sensor_get_power_up_settings(void *setting,
 	/* Allocate memory for power up setting */
 	pu = kzalloc(sizeof(*pu) * size, GFP_KERNEL);
 	if (!pu) {
-		pr_err("failed: no memory power_setting %pK", pu);
+		pr_err("failed: no memory power_setting %p", pu);
 		return -ENOMEM;
 	}
 
@@ -642,23 +644,6 @@ static void msm_sensor_fill_sensor_info(struct msm_sensor_ctrl_t *s_ctrl,
 }
 
 /* static function definition */
-int32_t msm_sensor_driver_is_special_support(
-	struct msm_sensor_ctrl_t *s_ctrl,
-	char* sensor_name)
-{
-	int32_t rc = FALSE;
-	int32_t i = 0;
-	struct msm_camera_sensor_board_info *sensordata = s_ctrl->sensordata;
-	for (i = 0; i < sensordata->special_support_size; i++) {
-		if (!strcmp(sensordata->special_support_sensors[i],
-			sensor_name)) {
-			rc = TRUE;
-			break ;
-		}
-	}
-	return rc;
-}
-
 int32_t msm_sensor_driver_probe(void *setting,
 	struct msm_sensor_info_t *probed_info, char *entity_name)
 {
@@ -669,18 +654,17 @@ int32_t msm_sensor_driver_probe(void *setting,
 	struct msm_camera_slave_info        *camera_info = NULL;
 
 	unsigned long                        mount_pos = 0;
-	uint32_t                             is_yuv;
 
 	/* Validate input parameters */
 	if (!setting) {
-		pr_err("failed: slave_info %pK", setting);
+		pr_err("failed: slave_info %p", setting);
 		return -EINVAL;
 	}
 
 	/* Allocate memory for slave info */
 	slave_info = kzalloc(sizeof(*slave_info), GFP_KERNEL);
 	if (!slave_info) {
-		pr_err("failed: no memory slave_info %pK", slave_info);
+		pr_err("failed: no memory slave_info %p", slave_info);
 		return -ENOMEM;
 	}
 #ifdef CONFIG_COMPAT
@@ -730,7 +714,6 @@ int32_t msm_sensor_driver_probe(void *setting,
 			setting32.is_init_params_valid;
 		slave_info->sensor_init_params = setting32.sensor_init_params;
 		slave_info->is_flash_supported = setting32.is_flash_supported;
-		slave_info->output_format = setting32.output_format;
 	} else
 #endif
 	{
@@ -770,15 +753,16 @@ int32_t msm_sensor_driver_probe(void *setting,
 	/* Extract s_ctrl from camera id */
 	s_ctrl = g_sctrl[slave_info->camera_id];
 	if (!s_ctrl) {
-		pr_err("failed: s_ctrl %pK for camera_id %d", s_ctrl,
+		pr_err("failed: s_ctrl %p for camera_id %d", s_ctrl,
 			slave_info->camera_id);
 		rc = -EINVAL;
 		goto free_slave_info;
 	}
 
-	CDBG("s_ctrl[%d] %pK", slave_info->camera_id, s_ctrl);
+	CDBG("s_ctrl[%d] %p", slave_info->camera_id, s_ctrl);
 
-#ifdef CONFIG_MACH_OPPO
+#ifdef VENDOR_EDIT
+/* zhengrong.zhang,2015/02/12, Modify for removing project judge */
 	if (s_ctrl->is_probe_succeed == 1 &&
 		slave_info->sensor_id_info.sensor_id ==
 		    s_ctrl->sensordata->cam_slave_info->sensor_id_info.sensor_id) {
@@ -820,16 +804,6 @@ int32_t msm_sensor_driver_probe(void *setting,
 	}
 #endif
 
-	if (s_ctrl->sensordata->special_support_size > 0) {
-		if (!msm_sensor_driver_is_special_support(s_ctrl,
-			slave_info->sensor_name)) {
-			pr_err("%s:%s is not support on this board\n",
-				__func__, slave_info->sensor_name);
-			rc = 0;
-			goto free_slave_info;
-		}
-	}
-
 	rc = msm_sensor_get_power_settings(setting, slave_info,
 		&s_ctrl->sensordata->power_info);
 	if (rc < 0) {
@@ -840,7 +814,7 @@ int32_t msm_sensor_driver_probe(void *setting,
 
 	camera_info = kzalloc(sizeof(struct msm_camera_slave_info), GFP_KERNEL);
 	if (!camera_info) {
-		pr_err("failed: no memory slave_info %pK", camera_info);
+		pr_err("failed: no memory slave_info %p", camera_info);
 		goto free_slave_info;
 
 	}
@@ -855,7 +829,7 @@ int32_t msm_sensor_driver_probe(void *setting,
 
 	/* Fill CCI master, slave address and CCI default params */
 	if (!s_ctrl->sensor_i2c_client) {
-		pr_err("failed: sensor_i2c_client %pK",
+		pr_err("failed: sensor_i2c_client %p",
 			s_ctrl->sensor_i2c_client);
 		rc = -EINVAL;
 		goto free_camera_info;
@@ -868,7 +842,7 @@ int32_t msm_sensor_driver_probe(void *setting,
 
 	cci_client = s_ctrl->sensor_i2c_client->cci_client;
 	if (!cci_client) {
-		pr_err("failed: cci_client %pK", cci_client);
+		pr_err("failed: cci_client %p", cci_client);
 		goto free_camera_info;
 	}
 	cci_client->cci_i2c_master = s_ctrl->cci_i2c_master;
@@ -940,6 +914,12 @@ int32_t msm_sensor_driver_probe(void *setting,
 	pr_err("%s probe succeeded", slave_info->sensor_name);
 
 	/*
+	  Set probe succeeded flag to 1 so that no other camera shall
+	 * probed on this slot
+	 */
+	s_ctrl->is_probe_succeed = 1;
+
+	/*
 	 * Update the subdevice id of flash-src based on availability in kernel.
 	 */
 	if (slave_info->is_flash_supported == 0) {
@@ -978,12 +958,9 @@ int32_t msm_sensor_driver_probe(void *setting,
 		goto free_camera_info;
 	}
 	/* Update sensor mount angle and position in media entity flag */
-	is_yuv = (slave_info->output_format == MSM_SENSOR_YCBCR) ? 1 : 0;
-	mount_pos = is_yuv << 25 |
-		(s_ctrl->sensordata->sensor_info->position << 16) |
-		((s_ctrl->sensordata->
-		sensor_info->sensor_mount_angle / 90) << 8);
-
+	mount_pos = s_ctrl->sensordata->sensor_info->position << 16;
+	mount_pos = mount_pos | ((s_ctrl->sensordata->sensor_info->
+		sensor_mount_angle / 90) << 8);
 	s_ctrl->msm_sd.sd.entity.flags = mount_pos | MEDIA_ENT_FL_DEFAULT;
 
 	/*Save sensor info*/
@@ -991,11 +968,6 @@ int32_t msm_sensor_driver_probe(void *setting,
 
 	msm_sensor_fill_sensor_info(s_ctrl, probed_info, entity_name);
 
-	/*
-	 * Set probe succeeded flag to 1 so that no other camera shall
-	 * probed on this slot
-	 */
-	s_ctrl->is_probe_succeed = 1;
 	return rc;
 
 camera_power_down:
@@ -1018,7 +990,7 @@ static int32_t msm_sensor_driver_get_gpio_data(
 
 	/* Validate input paramters */
 	if (!sensordata || !of_node) {
-		pr_err("failed: invalid params sensordata %pK of_node %pK",
+		pr_err("failed: invalid params sensordata %p of_node %p",
 			sensordata, of_node);
 		return -EINVAL;
 	}
@@ -1076,8 +1048,7 @@ static int32_t msm_sensor_driver_get_dt_data(struct msm_sensor_ctrl_t *s_ctrl)
 	int32_t                              rc = 0;
 	struct msm_camera_sensor_board_info *sensordata = NULL;
 	struct device_node                  *of_node = s_ctrl->of_node;
-	uint32_t                             cell_id;
-	int32_t                              i;
+	uint32_t cell_id;
 
 	s_ctrl->sensordata = kzalloc(sizeof(*sensordata), GFP_KERNEL);
 	if (!s_ctrl->sensordata) {
@@ -1110,34 +1081,6 @@ static int32_t msm_sensor_driver_get_dt_data(struct msm_sensor_ctrl_t *s_ctrl)
 		pr_err("failed: sctrl already filled for cell_id %d", cell_id);
 		rc = -EINVAL;
 		goto FREE_SENSOR_DATA;
-	}
-
-	sensordata->special_support_size =
-		of_property_count_strings(of_node, "qcom,special-support-sensors");
-
-	if (sensordata->special_support_size < 0)
-		sensordata->special_support_size = 0;
-
-	if (sensordata->special_support_size > MAX_SPECIAL_SUPPORT_SIZE) {
-		pr_err("%s:support_size exceed max support size\n",__func__);
-		sensordata->special_support_size = MAX_SPECIAL_SUPPORT_SIZE;
-	}
-
-	if (sensordata->special_support_size) {
-		for( i = 0; i < sensordata->special_support_size; i++) {
-			rc = of_property_read_string_index(of_node,
-				"qcom,special-support-sensors", i,
-				&(sensordata->special_support_sensors[i]));
-			if(rc < 0 ) {
-				/* if read sensor support names failed,
-				*   set support all sensors, break;
-				*/
-				sensordata->special_support_size = 0;
-				break ;
-			}
-			CDBG("%s special_support_sensors[%d] = %s\n", __func__,
-				i, sensordata->special_support_sensors[i]);
-		}
 	}
 
 	/* Read subdev info */
@@ -1207,7 +1150,8 @@ static int32_t msm_sensor_driver_get_dt_data(struct msm_sensor_ctrl_t *s_ctrl)
 	CDBG("%s qcom,mclk-23880000 = %d\n", __func__,
 		s_ctrl->set_mclk_23880000);
 
-#ifdef CONFIG_MACH_OPPO
+#ifdef VENDOR_EDIT
+/*zhengrong.zhang, 2015/04/15, add for pdaf engineer mode*/
 	if (BACK_CAMERA_B == sensordata->sensor_info->position)
 		is_pdaf_supported = of_property_read_bool(of_node, "qcom,pdaf-support");
 #endif
@@ -1235,7 +1179,7 @@ static int32_t msm_sensor_driver_parse(struct msm_sensor_ctrl_t *s_ctrl)
 	s_ctrl->sensor_i2c_client = kzalloc(sizeof(*s_ctrl->sensor_i2c_client),
 		GFP_KERNEL);
 	if (!s_ctrl->sensor_i2c_client) {
-		pr_err("failed: no memory sensor_i2c_client %pK",
+		pr_err("failed: no memory sensor_i2c_client %p",
 			s_ctrl->sensor_i2c_client);
 		return -ENOMEM;
 	}
@@ -1244,7 +1188,7 @@ static int32_t msm_sensor_driver_parse(struct msm_sensor_ctrl_t *s_ctrl)
 	s_ctrl->msm_sensor_mutex = kzalloc(sizeof(*s_ctrl->msm_sensor_mutex),
 		GFP_KERNEL);
 	if (!s_ctrl->msm_sensor_mutex) {
-		pr_err("failed: no memory msm_sensor_mutex %pK",
+		pr_err("failed: no memory msm_sensor_mutex %p",
 			s_ctrl->msm_sensor_mutex);
 		goto FREE_SENSOR_I2C_CLIENT;
 	}
@@ -1273,7 +1217,7 @@ static int32_t msm_sensor_driver_parse(struct msm_sensor_ctrl_t *s_ctrl)
 
 	/* Store sensor control structure in static database */
 	g_sctrl[s_ctrl->id] = s_ctrl;
-	pr_err("g_sctrl[%d] %pK", s_ctrl->id, g_sctrl[s_ctrl->id]);
+	pr_err("g_sctrl[%d] %p", s_ctrl->id, g_sctrl[s_ctrl->id]);
 
 	return rc;
 
@@ -1290,33 +1234,68 @@ FREE_SENSOR_I2C_CLIENT:
 	return rc;
 }
 
-#ifdef CONFIG_MACH_OPPO
+#ifdef VENDOR_EDIT
+/*zhengrong.zhang, 2015/04/15, add for pdaf engineer mode*/
 static ssize_t pdaf_proc_read(struct file *filp, char __user *buff,
 				size_t len, loff_t *data)
 {
-	char value[2] = {0};
+    char value[2] = {0};
 
-	snprintf(value, sizeof(value), "%d", (is_pdaf_supported << 1 | pdaf_calibration_flag));
+    snprintf(value, sizeof(value), "%d", (is_pdaf_supported << 1 | pdaf_calibration_flag));
 
-	pr_err("%s,is_pdaf_supported=%d, calibration_flag=%d, value=%s\n", __func__,
-		is_pdaf_supported, pdaf_calibration_flag, value);
-	return simple_read_from_buffer(buff, len, data, value, 1);
+    pr_err("%s,is_pdaf_supported=%d,calibration_flag=%d,value=%s\n", __func__,
+        is_pdaf_supported,pdaf_calibration_flag,value);
+    return simple_read_from_buffer(buff, len, data, value,1);
 }
 
 static const struct file_operations pdaf_test_fops = {
-	.owner		= THIS_MODULE,
-	.read		= pdaf_proc_read,
+    .owner		= THIS_MODULE,
+    .read		= pdaf_proc_read,
+    //.write		= pdaf_proc_write,
 };
 
 static int msm_sensor_driver_pdaf_proc_init(void)
 {
-	int ret = 0;
+	int ret=0;
 	struct proc_dir_entry *proc_entry;
 
 	proc_entry = proc_create_data("pdaf_info", 0666, NULL, &pdaf_test_fops, NULL);
-	if (proc_entry == NULL) {
+	if (proc_entry == NULL)
+	{
 		ret = -ENOMEM;
 		pr_err("[%s]: Error! Couldn't create pdaf_calibration proc entry\n", __func__);
+	}
+	return ret;
+}
+
+/*zhengrong.zhang, 2015/07/08, add for laser*/
+static ssize_t laser_proc_read(struct file *filp, char __user *buff,
+				size_t len, loff_t *data)
+{
+    char value[2] = {0};
+
+    snprintf(value, sizeof(value), "%d", is_laser_supported);
+
+    pr_err("%s,is_laser_supported=%d,value=%s\n", __func__,is_laser_supported,value);
+    return simple_read_from_buffer(buff, len, data, value,1);
+}
+
+static const struct file_operations laser_test_fops = {
+    .owner		= THIS_MODULE,
+    .read		= laser_proc_read,
+    //.write		= laser_proc_write,
+};
+
+static int msm_sensor_driver_laser_proc_init(void)
+{
+	int ret=0;
+	struct proc_dir_entry *proc_entry;
+
+	proc_entry = proc_create_data("laser_info", 0666, NULL, &laser_test_fops, NULL);
+	if (proc_entry == NULL)
+	{
+		ret = -ENOMEM;
+		pr_err("[%s]: Error! Couldn't create laser proc entry\n", __func__);
 	}
 	return ret;
 }
@@ -1330,7 +1309,7 @@ static int32_t msm_sensor_driver_platform_probe(struct platform_device *pdev)
 	/* Create sensor control structure */
 	s_ctrl = kzalloc(sizeof(*s_ctrl), GFP_KERNEL);
 	if (!s_ctrl) {
-		pr_err("failed: no memory s_ctrl %pK", s_ctrl);
+		pr_err("failed: no memory s_ctrl %p", s_ctrl);
 		return -ENOMEM;
 	}
 
@@ -1353,10 +1332,15 @@ static int32_t msm_sensor_driver_platform_probe(struct platform_device *pdev)
 	/* Fill device in power info */
 	s_ctrl->sensordata->power_info.dev = &pdev->dev;
 
-#ifdef CONFIG_MACH_OPPO
+#ifdef VENDOR_EDIT
+/*zhengrong.zhang, 2015/04/15, add for pdaf engineer mode*/
 	if (is_pdaf_supported &&
-			BACK_CAMERA_B == s_ctrl->sensordata->sensor_info->position)
+		BACK_CAMERA_B == s_ctrl->sensordata->sensor_info->position)
 		msm_sensor_driver_pdaf_proc_init();
+
+/*zhengrong.zhang, 2015/07/08, add for laser*/
+	if (BACK_CAMERA_B == s_ctrl->sensordata->sensor_info->position)
+		msm_sensor_driver_laser_proc_init();
 #endif
 
 	return rc;
@@ -1382,7 +1366,7 @@ static int32_t msm_sensor_driver_i2c_probe(struct i2c_client *client,
 	/* Create sensor control structure */
 	s_ctrl = kzalloc(sizeof(*s_ctrl), GFP_KERNEL);
 	if (!s_ctrl) {
-		pr_err("failed: no memory s_ctrl %pK", s_ctrl);
+		pr_err("failed: no memory s_ctrl %p", s_ctrl);
 		return -ENOMEM;
 	}
 

@@ -22,6 +22,11 @@
 #undef CDBG
 #define CDBG(fmt, args...) pr_debug(fmt, ##args)
 
+#ifdef VENDOR_EDIT
+/* zhengrong.zhang 2014-11-08 Add for open flash problem in status bar problem when camera opening */
+bool camera_power_status = FALSE;
+#endif
+
 int msm_camera_fill_vreg_params(struct camera_vreg_t *cam_vreg,
 	int num_vreg, struct msm_sensor_power_setting *power_setting,
 	uint16_t power_setting_size)
@@ -31,7 +36,7 @@ int msm_camera_fill_vreg_params(struct camera_vreg_t *cam_vreg,
 
 	/* Validate input parameters */
 	if (!cam_vreg || !power_setting) {
-		pr_err("%s:%d failed: cam_vreg %pK power_setting %pK", __func__,
+		pr_err("%s:%d failed: cam_vreg %p power_setting %p", __func__,
 			__LINE__,  cam_vreg, power_setting);
 		return -EINVAL;
 	}
@@ -160,6 +165,24 @@ int msm_sensor_get_sub_module_index(struct device_node *of_node,
 		of_node_put(src_node);
 		src_node = NULL;
 	}
+
+#ifndef CONFIG_MSM_CAMERA_SENSOR_OPPO_IOCTL_COMPAT
+	src_node = of_parse_phandle(of_node, "qcom,tof-src", 0);
+	if (!src_node) {
+		CDBG("%s:%d src_node NULL\n", __func__, __LINE__);
+	} else {
+		rc = of_property_read_u32(src_node, "cell-index", &val);
+		CDBG("%s qcom,tof cell index %d, rc %d\n", __func__,
+			val, rc);
+		if (rc < 0) {
+			pr_err("%s failed %d\n", __func__, __LINE__);
+			goto ERROR;
+		}
+		sensor_info->subdev_id[SUB_MODULE_TOF] = val;
+		of_node_put(src_node);
+		src_node = NULL;
+	}
+#endif
 
 	src_node = of_parse_phandle(of_node, "qcom,ois-src", 0);
 	if (!src_node) {
@@ -1046,7 +1069,8 @@ int msm_camera_get_dt_vreg_data(struct device_node *of_node,
 	struct camera_vreg_t **cam_vreg, int *num_vreg)
 {
 	int rc = 0, i = 0;
-#ifndef CONFIG_MACH_OPPO
+#ifndef VENDOR_EDIT
+/*oppo hufeng 20150308 modify to remove projece name*/
 	uint32_t count = 0;
 #else
 	int32_t count = 0;
@@ -1057,15 +1081,14 @@ int msm_camera_get_dt_vreg_data(struct device_node *of_node,
 
 	count = of_property_count_strings(of_node, "qcom,cam-vreg-name");
 	CDBG("%s qcom,cam-vreg-name count %d\n", __func__, count);
-
-#ifndef CONFIG_MACH_OPPO
+#ifndef VENDOR_EDIT
+/*oppo hufeng 20150308 modify to remove projece name*/
 	if (!count)
 		return 0;
 #else
-	if (count <= 0)
+	if (count<=0)
 		return count;
 #endif
-
 	vreg = kzalloc(sizeof(*vreg) * count, GFP_KERNEL);
 	if (!vreg) {
 		pr_err("%s failed %d\n", __func__, __LINE__);
@@ -1233,7 +1256,7 @@ int msm_camera_power_up(struct msm_camera_power_ctrl_t *ctrl,
 
 	CDBG("%s:%d\n", __func__, __LINE__);
 	if (!ctrl || !sensor_i2c_client) {
-		pr_err("failed ctrl %pK sensor_i2c_client %pK\n", ctrl,
+		pr_err("failed ctrl %p sensor_i2c_client %p\n", ctrl,
 			sensor_i2c_client);
 		return -EINVAL;
 	}
@@ -1353,6 +1376,11 @@ int msm_camera_power_up(struct msm_camera_power_ctrl_t *ctrl,
 		}
 	}
 
+#ifdef VENDOR_EDIT
+/* zhengrong.zhang 2014-11-08 Add for open flash problem in status bar problem when camera opening */
+	camera_power_status = TRUE;
+#endif
+
 	CDBG("%s exit\n", __func__);
 	return 0;
 power_up_failed:
@@ -1452,7 +1480,7 @@ int msm_camera_power_down(struct msm_camera_power_ctrl_t *ctrl,
 
 	CDBG("%s:%d\n", __func__, __LINE__);
 	if (!ctrl || !sensor_i2c_client) {
-		pr_err("failed ctrl %pK sensor_i2c_client %pK\n", ctrl,
+		pr_err("failed ctrl %p sensor_i2c_client %p\n", ctrl,
 			sensor_i2c_client);
 		return -EINVAL;
 	}
@@ -1550,6 +1578,12 @@ int msm_camera_power_down(struct msm_camera_power_ctrl_t *ctrl,
 	msm_camera_request_gpio_table(
 		ctrl->gpio_conf->cam_gpio_req_tbl,
 		ctrl->gpio_conf->cam_gpio_req_tbl_size, 0);
+
+#ifdef VENDOR_EDIT
+/* zhengrong.zhang 2014-11-08 Add for open flash problem in status bar problem when camera opening */
+	camera_power_status = FALSE;
+#endif
+
 	CDBG("%s exit\n", __func__);
 	return 0;
 }

@@ -69,7 +69,8 @@ struct msm_led_flash_ctrl_t {
 	enum msm_camera_led_config_t led_state;
 	uint32_t subdev_id;
 	struct msm_pinctrl_info pinctrl_info;
-#ifdef CONFIG_MACH_OPPO
+#ifdef VENDOR_EDIT
+/*Added by Jinshui.Liu@Camera 20150720 start to avoid repeated operation*/
 	uint32_t current_mode;
 #endif
 };

@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2015, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -19,7 +19,7 @@
 #include "mpq_dmx_plugin_common.h"
 #include "mpq_sdmx.h"
 
-#define SDMX_MAJOR_VERSION_MATCH	(6)
+#define SDMX_MAJOR_VERSION_MATCH	(5)
 
 /* Length of mandatory fields that must exist in header of video PES */
 #define PES_MANDATORY_FIELDS_LEN			9
@@ -358,17 +358,13 @@ static ssize_t mpq_sdmx_log_level_write(struct file *fp,
 	int level;
 	struct mpq_demux *mpq_demux = fp->private_data;
 
-	if (count == 0 || count >= 16)
+	if (count >= 16)
 		return -EINVAL;
 
-	memset(user_str, '\0', sizeof(user_str));
-
-	ret_count = simple_write_to_buffer(user_str, 15, position, user_buffer,
+	ret_count = simple_write_to_buffer(user_str, 16, position, user_buffer,
 		count);
 	if (ret_count < 0)
 		return ret_count;
-	else if (ret_count == 0)
-		return -EINVAL;
 
 	ret = sscanf(user_str, "%d", &level);
 	if (ret != 1)

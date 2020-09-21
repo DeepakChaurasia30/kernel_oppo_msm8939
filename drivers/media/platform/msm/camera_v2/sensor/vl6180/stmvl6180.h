@@ -187,7 +187,7 @@ struct stmvl6180_data {
 	struct regulator *vdd_regulator;
 	struct regulator *vdd_regulator_i2c;
 	int id;
-	#ifdef CONFIG_MACH_OPPO
+	#ifdef VENDOR_EDIT
 	//lanhe@oppo.com add for note reset cnt
 	int force_reset_cnt;
 	#endif

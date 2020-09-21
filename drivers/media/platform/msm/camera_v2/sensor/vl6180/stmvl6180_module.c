@@ -57,6 +57,10 @@ stmvl6180x_dev vl6180x_dev;
 #define VL6180_I2C_ADDRESS  (0x52>>1)
 static struct i2c_client *client;
 
+#ifdef VENDOR_EDIT
+/*zhengrong.zhang, 2015/07/08, add for laser*/
+extern bool is_laser_supported;
+#endif
 /*
  * Global data
  */
@@ -413,7 +417,7 @@ static void stmvl6180_ps_read_measurement(struct i2c_client *client)
 			vl6180_data->rangeData.rtnConvTime);
 
 }
-#ifdef CONFIG_MACH_OPPO
+#ifdef VENDOR_EDIT
 /* lanhe add for fixed dump err when cci transit failed*/
 static void stmvl6180_ps_notify_abort(void)
 {
@@ -467,7 +471,7 @@ static ssize_t vendor_enable_ps_sensor(int enable)
 			VL6180x_RangeConfigInterrupt(vl6180x_dev, CONFIG_GPIO_INTERRUPT_NEW_SAMPLE_READY);
             VL6180x_RangeClearInterrupt(vl6180x_dev);
 
-#ifdef CONFIG_MACH_OPPO
+#ifdef VENDOR_EDIT
 			//lanhe@oppo.com add for write offset and crosstalk in time
 			VL6180x_SetOffset(vl6180x_dev,offset_calib);
 			VL6180x_SetXTalkCompensationRate(vl6180x_dev, xtalk_calib);
@@ -536,7 +540,7 @@ static ssize_t stmvl6180_store_enable_ps_sensor(struct device *dev,
 			VL6180x_RangeConfigInterrupt(vl6180x_dev, CONFIG_GPIO_INTERRUPT_NEW_SAMPLE_READY);
             VL6180x_RangeClearInterrupt(vl6180x_dev);
 
-#ifdef CONFIG_MACH_OPPO
+#ifdef VENDOR_EDIT
 		   //lanhe@oppo.com add for write offset and crosstalk in time
 		   VL6180x_SetOffset(vl6180x_dev,offset_calib);
 		   VL6180x_SetXTalkCompensationRate(vl6180x_dev, xtalk_calib);
@@ -568,7 +572,7 @@ static ssize_t stmvl6180_store_enable_ps_sensor(struct device *dev,
 		vl6180_data->enable_ps_sensor = 0;
 		if (vl6180_data->ps_is_singleshot == 0)
 			VL6180x_RangeSetSystemMode(vl6180x_dev, MODE_START_STOP);
-		#ifdef CONFIG_MACH_OPPO
+		#ifdef VENDOR_EDIT
 		//lanhe@oppo.com add for clear device error status
 		VL6180x_RangeClearInterrupt(vl6180x_dev);
 		#endif
@@ -625,7 +629,7 @@ static void stmvl6180_work_handler(struct work_struct *work)
 		}
 	}
 
-#ifdef CONFIG_MACH_OPPO
+#ifdef VENDOR_EDIT
 	/* lanhe add for fixed dump err when cci transit failed*/
 	if(ret < 0){
 		//lanhe@oppo.com add for note reset cnt
@@ -644,7 +648,7 @@ static void stmvl6180_work_handler(struct work_struct *work)
 		return;
 	}
 #endif
-#ifdef CONFIG_MACH_OPPO
+#ifdef VENDOR_EDIT
 /* lanhe add for make sure calibration writting success*/
 	if(offset_calib >= 3)
 	{
@@ -827,7 +831,7 @@ static int stmvl6180_ioctl_handler(struct file *file,
 
 			VL6180x_RangeConfigInterrupt(vl6180x_dev, CONFIG_GPIO_INTERRUPT_NEW_SAMPLE_READY);
 			VL6180x_RangeClearInterrupt(vl6180x_dev);
-			#ifdef CONFIG_MACH_OPPO
+			#ifdef VENDOR_EDIT
 			//lanhe@oppo.com add for write offset and crosstalk in time
 			VL6180x_SetOffset(vl6180x_dev,offset_calib);
 			VL6180x_SetXTalkCompensationRate(vl6180x_dev, xtalk_calib);
@@ -874,7 +878,7 @@ static int stmvl6180_ioctl_handler(struct file *file,
 #endif
 			VL6180x_RangeConfigInterrupt(vl6180x_dev, CONFIG_GPIO_INTERRUPT_NEW_SAMPLE_READY);
 			VL6180x_RangeClearInterrupt(vl6180x_dev);
-			#ifdef CONFIG_MACH_OPPO
+			#ifdef VENDOR_EDIT
 			//lanhe@oppo.com add for write offset and crosstalk in time
 			VL6180x_SetOffset(vl6180x_dev,offset_calib);
 			VL6180x_SetXTalkCompensationRate(vl6180x_dev, 0);
@@ -937,7 +941,7 @@ static int stmvl6180_ioctl_handler(struct file *file,
 #endif
 			VL6180x_RangeConfigInterrupt(vl6180x_dev, CONFIG_GPIO_INTERRUPT_NEW_SAMPLE_READY);
 			VL6180x_RangeClearInterrupt(vl6180x_dev);
-			#ifdef CONFIG_MACH_OPPO
+			#ifdef VENDOR_EDIT
 			//lanhe@oppo.com add for write offset and crosstalk in time
 			VL6180x_SetOffset(vl6180x_dev,0);
 			VL6180x_SetXTalkCompensationRate(vl6180x_dev, 0);
@@ -1149,6 +1153,10 @@ static int stmvl6180_init_client(struct stmvl6180_data *vl6180_data)
 	CDBG("read MODLE_ID: 0x%x\n", id);
 	if (id == 0xb4) {
 		pr_err("STM VL6180 Found\n");
+#ifdef VENDOR_EDIT
+/*zhengrong.zhang, 2015/07/08, add for laser*/
+		is_laser_supported = true;
+#endif
 	}
 	else if (id==0){
 		pr_err("Not found STM VL6180\n");
@@ -1346,7 +1354,7 @@ int stmvl6180_power_enable(struct stmvl6180_data *vl6180_data, unsigned int enab
 			}
 
 			vl6180_data->enable = 0;
-			#ifdef CONFIG_MACH_OPPO
+			#ifdef VENDOR_EDIT
 			//lanhe@oppo.com add for note reset cnt
 			vl6180_data->force_reset_cnt = 0;
 			//lanhe@oppo.com add we must stop polling worker while power off sensor
@@ -1614,7 +1622,7 @@ static int stmvl6180_i2c_probe(struct i2c_client *client, const struct i2c_devic
 		pr_err("%s:%d kzalloc failed\n", __func__, __LINE__);
 		goto exit;
 	}
-#ifdef CONFIG_MACH_OPPO
+#ifdef VENDOR_EDIT
 	//lanhe@oppo.com add for note reset cnt
 	vl6180_data->force_reset_cnt = 0;
 #endif

@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -296,7 +296,7 @@ static int read_platform_resources(struct msm_vidc_core *core,
 		struct platform_device *pdev)
 {
 	if (!core || !pdev) {
-		dprintk(VIDC_ERR, "%s: Invalid params %pK %pK\n",
+		dprintk(VIDC_ERR, "%s: Invalid params %p %p\n",
 			__func__, core, pdev);
 		return -EINVAL;
 	}
@@ -496,16 +496,12 @@ static int msm_vidc_probe(struct platform_device *pdev)
 	struct device *dev;
 	int nr = BASE_DEVICE_NUMBER;
 
-	if (!vidc_driver) {
-		dprintk(VIDC_ERR, "Invalid vidc driver\n");
-		return -EINVAL;
-	}
-
 	core = kzalloc(sizeof(*core), GFP_KERNEL);
-	if (!core) {
+	if (!core || !vidc_driver) {
 		dprintk(VIDC_ERR,
 			"Failed to allocate memory for device core\n");
-		return -ENOMEM;
+		rc = -ENOMEM;
+		goto err_no_mem;
 	}
 	rc = msm_vidc_initialize_core(pdev, core);
 	if (rc) {
@@ -635,6 +631,7 @@ err_v4l2_register:
 	sysfs_remove_group(&pdev->dev.kobj, &msm_vidc_core_attr_group);
 err_core_init:
 	kfree(core);
+err_no_mem:
 	return rc;
 }
 
@@ -644,7 +641,7 @@ static int msm_vidc_remove(struct platform_device *pdev)
 	struct msm_vidc_core *core;
 
 	if (!pdev) {
-		dprintk(VIDC_ERR, "%s invalid input %pK", __func__, pdev);
+		dprintk(VIDC_ERR, "%s invalid input %p", __func__, pdev);
 		return -EINVAL;
 	}
 	core = pdev->dev.platform_data;
@@ -740,7 +737,6 @@ static int __init msm_vidc_init(void)
 	if (rc) {
 		dprintk(VIDC_ERR,
 			"Failed to register platform driver\n");
-		debugfs_remove_recursive(vidc_driver->debugfs_root);
 		kfree(vidc_driver);
 		vidc_driver = NULL;
 	}
