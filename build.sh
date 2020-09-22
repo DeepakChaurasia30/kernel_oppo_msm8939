@@ -1,12 +1,13 @@
 #!/bin/bash
+BUILD_START=$(date +"%s")
 
 tcdir=${HOME}/android/TOOLS/GCC
 
-virtualenv2 venv
-source venv/bin/activate
-
 [ -d "out" ] && rm -rf out && mkdir -p out || mkdir -p out
 [ -d "venv" ] && rm -rf venv && mkdir -p venv || mkdir -p venv
+
+virtualenv2 venv
+source venv/bin/activate
 
 make O=out ARCH=arm64 lineageos_a37f_defconfig
 
@@ -38,5 +39,11 @@ cd ../../../../..
 fmt=`date +%d\.%m\.%Y_%H\:%M\:%S`
 pre=A37F
 cp out/arch/arm64/boot/dts/dt.img anykernel3 && cp out/arch/arm64/boot/Image anykernel3 && cd anykernel3
+# cp /path/to/custom/dt.img anykernel3
+cp out/arch/arm64/boot/Image anykernel3 && cd anykernel3
 zip -r ${pre}_KERNEL_${fmt}.zip . -x 'LICENSE' 'README.md' 'dtbtool.c'
 mv *.zip ../out
+
+BUILD_END=$(date +"%s")
+DIFF=$(($BUILD_END - $BUILD_START))
+echo -e "Build completed in $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
