@@ -1,6 +1,6 @@
 /************************************************************************************
 ** File: - /android/kernel/drivers/input/touchscreen/synaptic_s3203_13095/synaptics_s3203_13095.c
-** CONFIG_MACH_OPPO
+** VENDOR_EDIT
 ** Copyright (C), 2008-2012, OPPO Mobile Comm Corp., Ltd
 ** 
 ** Description:  
@@ -3205,7 +3205,15 @@ static int synaptics_ts_probe(
 	if( (tp_dev == TP_G2Y) || (tp_dev == TP_TPK) ) {
 		sprintf(ts->manu_name, "TP_TPK"); 
 	}
-    
+	if(tp_dev == TP_OFILM){
+		sprintf(ts->manu_name, "TP_OFILM");	
+		strcpy(ts->fw_name,"tp/15399_Firmware_Oflim.img");
+		strcpy(ts->test_limit_name,"tp/15399_Limit_Oflim.img");
+	} else {
+		sprintf(ts->manu_name, "TP_TRULY"); 
+		strcpy(ts->fw_name,"tp/15399_Firmware_Truly.img");
+		strcpy(ts->test_limit_name,"tp/15399_Limit_Truly.img");
+	}
 	tp_info.manufacture = ts->manu_name;			
 	TPD_DEBUG("synatpitcs_fw: fw_name = %s \n",ts->fw_name);
 	register_device_proc("tp", tp_info.version, tp_info.manufacture);	
