@@ -109,15 +109,39 @@
 			st,g-range = <2>;
 			st,negate-x;
             status = "ok";
-		};
+				
+                };	
 
+		/* LiuPing@Phone.BSP.Sensor, 2014/09/04, add for msensor:mmc3416x */
 		memsic@30 { /* Magnetic field sensor */
-			compatible = "memsic,mmc3416x";
-			reg = <0x30>;
+		compatible = "memsic,mmc3416x";
+		reg = <0x30>;
+		vdd-supply = <&pm8916_l17>;
+		vio-supply = <&pm8916_l6>;
+		memsic,dir = "reverse-x-axis-backward";
+		memsic,auto-report;
+		};		
+
+		yamaha@2e { /* Magnetic field sensor */
+			compatible = "yamaha,yas533";
+			reg = <0x2e>;
 			vdd-supply = <&pm8916_l17>;
 			vio-supply = <&pm8916_l6>;
-			memsic,dir = "obverse-x-axis-leftward";
-			memsic,auto-report;
+			yamaha,dir = <6>;
+		};		
+
+		akm@c {
+			compatible = "ak,ak8963";
+			reg = <0x0c>;
+			pinctrl-names = "ak8963_default", "ak8963_sleep";
+			pinctrl-0 = <&ak8963_default>;
+			pinctrl-1 = <&ak8963_sleep>;
+			interrupt-parent = <&msm_gpio>;
+			interrupts = <69 0x2>;
+			vdd-supply = <&pm8916_l17>;
+			vio-supply = <&pm8916_l6>;
+			ak,layout = <0x6>;
+			ak,auto-report;
 		};
 
 		apds@53 { /* Ambient light and proximity sensor */
@@ -146,30 +170,6 @@
 			kionix,negate-x;
 			kionix,res-12bit;
             status = "ok";
-		};
-		
-		akm@c {
-			compatible = "ak,ak8963";
-			reg = <0x0c>;
-			pinctrl-names = "ak8963_default", "ak8963_sleep";
-			pinctrl-0 = <&ak8963_default>;
-			pinctrl-1 = <&ak8963_sleep>;
-			interrupt-parent = <&msm_gpio>;
-			interrupts = <69 0x2>;
-			vdd-supply = <&pm8916_l17>;
-			vio-supply = <&pm8916_l6>;
-			/delete-property/ ak,layout;
-			ak,layout = <0x1>;
-			ak,auto-report;
-            status = "ok";
-		};
-		
-		yamaha@2e {
-			compatible = "yamaha,yas533";
-			reg = <0x2e>;
-			vdd-supply = <&pm8916_l17>;
-			vio-supply = <&pm8916_l6>;
-			yamaha,dir = <0x6>;
 		};
 		
 		stk@48 {
