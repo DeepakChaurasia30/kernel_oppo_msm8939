@@ -2476,6 +2476,15 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
 
 			default: off.
 
+	print_fatal_murder=
+			[KNL] debug: will help to find who kill the system_server
+
+			If enabled, will get the sender stack which will
+			help to find who kill the system_server or zygote.
+
+			default: off.
+
+
 	printk.always_kmsg_dump=
 			Trigger kmsg_dump for cases other than kernel oops or
 			panics
