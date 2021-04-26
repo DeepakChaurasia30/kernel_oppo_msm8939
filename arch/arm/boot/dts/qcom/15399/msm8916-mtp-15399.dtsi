@@ -216,55 +216,52 @@
 		};
 	};
 
-	i2c@78b8000 { /* BLSP1 QUP4 */
-		bq24196_otg_supply: qcom_bq24196@6b {
+  /*Fuchun.Liao@Mobile.BSP.CHG 2014-07-31 add to config BSL1 QUP4 for smb358-charger*/
+	i2c@78b8000 {	/* BLSP1 QUP4 */
+		bq24196_otg_supply:	qcom_bq24196@6b {
 			compatible = "ti,bq24196-charger";
 			reg = <0x6b>;
 			vcc_i2c_opcharger-supply = <&pm8916_l5>;
-
 			qcom,irq-gpio = <&msm_gpio 62 0x00>;
-			qcom,usbin-switch-gpio = <&pm8916_gpios 3 0>;
-
+			qcom,usbin-switch-gpio = <&pm8916_gpios 4 0>;
+			qcom,batt-id-gpio = <&msm_gpio 49 0x00>;
 			qcom,disable-apsd;
 			qcom,using-pmic-therm;
+			//qcom,bms-controlled-charging;
 			qcom,charger-inhibit-disabled;
 			qcom,bms-psy-name = "bms";
 			qcom,chg-vadc = <&pm8916_vadc>;
 			qcom,chg-adc_tm = <&pm8916_adc_tm>;
 
-			qcom,iterm-ma = <130>;
-			qcom,recharge-mv = <200>;
-			qcom,fast-charger-project-sign= <0>;
-			qcom,fastchg-current-max-ma = <1500>;
-			qcom,input-current-max-ma = <1500>;
-			qcom,float-voltage-mv = <4320>;
+			qcom,iterm-ma = <100>;									/*Charge termination current*/
+			qcom,recharge-mv = <200>;									/* The minimum voltage drop for recharger*/
+			qcom,fast-charger-project-sign= <0>;						/* fastcharger project sign*/	
+			qcom,fastchg-current-max-ma = <1000>;						/*Maximum fast charging current.*/
+			qcom,input-current-max-ma = <1000>;						/*Maximum input current.*/
+			qcom,float-voltage-mv = <4320>;							/* from constant current charging to constant voltage chargeing for voltage threshold*/
 
-			qcom,hot_bat_decidegc = <530>;
-			qcom,temp_hot_vfloat_mv = <4100>;
-			qcom,temp_hot_fastchg_current_ma = <520>;
+			qcom,hot_bat_decidegc = <530>;							/* hot battery temperature in decidegC = 53*/
+			qcom,temp_hot_vfloat_mv = <4100>;							/* hot battery temperature cutoff voltage =4.1V (45~55)*/
+			qcom,temp_hot_fastchg_current_ma = <600>;					/* hot battery temperature fast current   =0.75A (45~55)*/
 
-			qcom,warm_bat_decidegc = <450>;
-			qcom,temp_warm_vfloat_mv = <4320>;
-			qcom,temp_warm_fastchg_current_ma = <1420>;
+			qcom,warm_bat_decidegc = <430>;							/* Warm battery temperature in decidegC= 43*/
+			qcom,temp_warm_vfloat_mv = <4315>;						/* warn battery temperature cutoff voltage =4.1V (5~45)*/ //chaoying.chen@EXP.BaseDrv.charge,2015/07/21 modify for 15070
+			qcom,temp_warm_fastchg_current_ma = <1000>;				/* warn battery temperature fast current   =0.75A (5~45)*/
 
-			qcom,pre_normal_bat_decidegc = <220>;
-			qcom,temp_pre_normal_vfloat_mv = <4320>;
-			qcom,temp_pre_normal_fastchg_current_ma = <1050>;
+			qcom,pre_normal_bat_decidegc = <220>;						/* pre_cool battery temperature in decidegC= 22*/	
+			qcom,temp_pre_normal_vfloat_mv = <4320>;						/* warn battery temperature cutoff voltage =4.1V (5~45)*/
+			qcom,temp_pre_normal_fastchg_current_ma = <1000>;			/* warn battery temperature fast current   =0.75A (5~45)*/
 
-			qcom,pre_cool_bat_decidegc = <120>;
-			qcom,temp_pre_cool_vfloat_mv = <4320>;
-			qcom,temp_pre_cool_fastchg_current_ma = <535>;
+			qcom,pre_cool_bat_decidegc = <120>;						/* pre_cool battery temperature in decidegC= 12*/	
+			qcom,temp_pre_cool_vfloat_mv = <4200>;					/* pre_cool battery temperature cutoff voltage =4.2V (0~5)*/
+			qcom,temp_pre_cool_fastchg_current_ma = <600>;			/* pre_cool battery temperature fast current   =0.75A (0~5)*/
 
-			qcom,pre_cool1_bat_decidegc = <50>;
-			qcom,temp_pre_cool1_vfloat_mv = <4320>;
-			qcom,temp_pre_cool1_fastchg_current_ma = <300>;
+			qcom,cool_bat_decidegc = <0>;								/* cool battery temperature in decidegC= 0*/
+			qcom,temp_cool_vfloat_mv = <4000>;						/* cool battery temperature cutoff voltage =4.0V (-10~0) */
+			qcom,temp_cool_fastchg_current_ma = <256>;				/* cool battery temperature fast current   =0.25A(-10~0)*/
 
-			qcom,cool_bat_decidegc = <0>;
-			qcom,temp_cool_vfloat_mv = <4000>;
-			qcom,temp_cool_fastchg_current_ma = <256>;
-
-			qcom,cold_bat_decidegc = <30>;
-			qcom,bat_present_decidegc = <200>;
+			qcom,cold_bat_decidegc = <30>;							/* cold battery temperature in decidegC= -3*/
+			qcom,bat_present_decidegc = <200>;						/* battery decidegc temperature in decidegC= -20*/
 			qcom,non_standard_vfloat_mv = <4000>;
 			qcom,non_standard_fastchg_current_ma = <512>;
 
@@ -449,7 +446,6 @@
 };
 
 &pm8916_chg {
-    qcom,resume-soc = <99>;
 	status = "ok";
 	qcom,charging-disabled;
 };
@@ -611,8 +607,6 @@
 &pm8916_bms {
        /delete-property/ qcom,battery-data;
 	   status = "ok";
-	   qcom,resume-soc = <99>;
-	   qcom,shutdown-soc-valid-limit = <20>;
 
 	   qcom,battery-data-sony = <&mtp_sony_batterydata>;
 	   qcom,battery-data-atl = <&mtp_atl_batterydata>;
