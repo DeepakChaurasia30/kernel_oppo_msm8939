@@ -461,51 +461,64 @@
 };
 
 / {
-    mtp_high_atl_batterydata: qcom,battery-data-high-atl {
+/*Fuchun.Liao@Mobile.BSP.CHG 2014-11-19 modify for batterydata*/
+	mtp_sony_batterydata: qcom,battery-data-sony {
 		qcom,rpull-up-kohm = <100>;
 		qcom,vref-batt-therm = <1800000>;
-		#include "batterydata-oppo-4v4-2550mah-high-ATL.dtsi"
-    };
-    
-    mtp_high_lg_batterydata: qcom,battery-data-high-lg {
+		#include "batterydata-oppo-sony-4v35-2420mah.dtsi"
+	};
+
+	mtp_atl_batterydata: qcom,battery-data-atl {
 		qcom,rpull-up-kohm = <100>;
 		qcom,vref-batt-therm = <1800000>;
-		#include "batterydata-oppo-4v4-2550mah-high-lg.dtsi"
-    };
-    
-    
+		#include "batterydata-oppo-atl-4v35-2420mah.dtsi"
+	};
+
+	mtp_sdi_batterydata: qcom,battery-data-sdi {
+		qcom,rpull-up-kohm = <100>;
+		qcom,vref-batt-therm = <1800000>;
+		#include "batterydata-oppo-sdi-4v35-2420mah.dtsi"
+	};
+
+	mtp_lg_batterydata: qcom,battery-data-lg {
+		qcom,rpull-up-kohm = <100>;
+		qcom,vref-batt-therm = <1800000>;
+		#include "batterydata-oppo-lg-4v35-2420mah.dtsi"
+	};
+/*Mofei@Mobile.BSP.CHG 2016-1-18 modify for batterydata*/
 	mtp_high_sdi_batterydata: qcom,battery-data-high-sdi {
 		qcom,rpull-up-kohm = <100>;
 		qcom,vref-batt-therm = <1800000>;
-
-		#include "batterydata-oppo-4v4-2550mah-high-sdi.dtsi"
-    };
-    
-    mtp_atl_batterydata: qcom,battery-data-atl {
-		qcom,rpull-up-kohm = <100>;
-		qcom,vref-batt-therm = <1800000>;
-
-		#include "batterydata-oppo-4v35-2420mah-atl.dtsi" 
-    };
-    
-    mtp_lg_batterydata: qcom,battery-data-lg {
-		qcom,rpull-up-kohm = <100>;
-		qcom,vref-batt-therm = <1800000>;
-    
-		#include "batterydata-oppo-4v35-2420mah-lg.dtsi"
-    };
-    
-    mtp_sdi_batterydata: qcom,battery-data-sdi {
-		qcom,rpull-up-kohm = <100>;
-		qcom,vref-batt-therm = <1800000>;
-		#include "batterydata-oppo-4v35-2420mah-sdi.dtsi"
-    };
-    
-    mtp_sony_batterydata: qcom,battery-data-sony {
-		qcom,rpull-up-kohm = <100>;
-		qcom,vref-batt-therm = <1800000>;
-		#include "batterydata-oppo-4v35-2420mah-sony.dtsi"
+		#include "batterydata-oppo-sdi-4v4-2550mah.dtsi"
 	};
+	mtp_high_lg_batterydata: qcom,battery-data-high-lg {
+		qcom,rpull-up-kohm = <100>;
+		qcom,vref-batt-therm = <1800000>;
+		#include "batterydata-oppo-lg-4v4-2550mah.dtsi"
+	};
+	mtp_high_atl_batterydata: qcom,battery-data-high-atl {
+		qcom,rpull-up-kohm = <100>;
+		qcom,vref-batt-therm = <1800000>;
+		#include "batterydata-oppo-atl-4v4-2550mah.dtsi"
+	};
+/*Mofei modify end*/
+/*Fuchun.Liao modify end*/
+};
+
+&pm8916_bms {
+	status = "ok";
+/*Fuchun.Liao@Mobile.BSP.CHG 2014-11-19 modify for batterydata*/
+	//qcom,battery-data = <&mtp_batterydata>;
+	qcom,battery-data-sony = <&mtp_sony_batterydata>;
+	qcom,battery-data-atl = <&mtp_atl_batterydata>;
+	qcom,battery-data-sdi = <&mtp_sdi_batterydata>;
+	qcom,battery-data-lg = <&mtp_lg_batterydata>;
+/*Mofei@Mobile.BSP.CHG 2016-1-18 modify for batterydata*/
+	qcom,battery-data-high-atl = <&mtp_high_atl_batterydata>;
+	qcom,battery-data-high-sdi = <&mtp_high_sdi_batterydata>;
+	qcom,battery-data-high-lg = <&mtp_high_lg_batterydata>;
+/*Mofei modify end*/
+/*Fuchun.Liao modify end*/
 };
 
 &qcom_tzlog {
@@ -613,20 +626,6 @@
 	   pcb-ver-flag1 = <&msm_gpio 51 0x0>;
 	   pcb-ver-flag2 = <&msm_gpio 52 0x0>;
 };
-
-&pm8916_bms {
-       /delete-property/ qcom,battery-data;
-	   status = "ok";
-
-	   qcom,battery-data-sony = <&mtp_sony_batterydata>;
-	   qcom,battery-data-atl = <&mtp_atl_batterydata>;
-	   qcom,battery-data-sdi = <&mtp_sdi_batterydata>;
-	   qcom,battery-data-lg = <&mtp_lg_batterydata>;
-	   qcom,battery-data-high-atl = <&mtp_high_atl_batterydata>;
-	   qcom,battery-data-high-sdi = <&mtp_high_sdi_batterydata>;
-	   qcom,battery-data-high-lg = <&mtp_high_lg_batterydata>;
-};
-
 
 
 
