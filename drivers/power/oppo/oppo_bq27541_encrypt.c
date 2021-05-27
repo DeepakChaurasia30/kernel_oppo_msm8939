@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Copyright (c)  2014- 2014  Guangdong OPPO Mobile Telecommunications Corp., Ltd
-* VENDOR_EDIT
+* CONFIG_MACH_OPPO
 * Description: Source file for CBufferList.
 *           To allocate and free memory block safely.
 * Version   : 0.0
@@ -15,7 +15,7 @@
 *******************************************************************************/
 
 #define OPPO_BQ27541_ENCRYPT_PAR
-#include <oppo_inc.h>
+#include "oppo_inc.h"
 #include <linux/kernel.h>
 
 
@@ -31,16 +31,16 @@ unsigned long Digest_32[5]; // Result of SHA1/HMAC obtained by MCU is contained 
 
 //*****************************************************************************
 //  unsigned long Rotl(unsigned long x, int n)
-//							
+//
 //  Description : This procedure is a rotate left n spaces of 32-bit word x.
 //  Arguments :   x - word to be rotated
-//	          n - amount of spaces to rotated to the left								  
+//	          n - amount of spaces to rotated to the left
 //  Returns: Result of 32-bit word rotated n times
 //*****************************************************************************
 unsigned long Rotl(unsigned long x, int n)
 {
   return ( (x<<n) | (x>>(32-n)) );
-}	
+}
 
 //*****************************************************************************
 // unsigned long W(int t)
@@ -53,7 +53,7 @@ unsigned long Rotl(unsigned long x, int n)
 unsigned long W(int t)
 {
   return (Rotl(Ws[t-3] ^ Ws[t-8] ^ Ws[t-14] ^ Ws[t-16], 1));
-}	
+}
 
 //*****************************************************************************
 // unsigned long K(int t)
@@ -75,7 +75,7 @@ unsigned long K(int t)
   else
     return 0;		                    // Invalid value, not expected
 }
-	
+
 //*****************************************************************************
 // unsigned long f(unsigned long x, unsigned long y, unsigned long z, int t)
 //
@@ -99,7 +99,7 @@ unsigned long f(unsigned long x, unsigned long y, unsigned long z, int t)
     return (x ^ y ^ z);
   else
     return 0;                               // Invalid value, not expected
-}	
+}
 
 //*****************************************************************************
 // void SHA1_authenticate(void)
@@ -119,8 +119,8 @@ char *BQ27541_HMACSHA1_authenticate(char *Message,char *Key,char *result)
   int i; // Used for doing two times the SHA1 as required by the bq26100
   int t; // Used for the indexes 0 through 79
   unsigned long temp; // Used as the temp variable during the loop in which the
-               // working variables A, B, C1, D and E are updated         
-               
+               // working variables A, B, C1, D and E are updated
+
   // The 20 bytes of random message that are given to the bq26100 are arranged
   // in 32-bit words so that the microcontroller can compute the SHA1/HMAC
   Random[0] = (unsigned long)(Message[16])*0x00000001 +
@@ -165,7 +165,7 @@ char *BQ27541_HMACSHA1_authenticate(char *Message,char *Key,char *result)
             (unsigned long)(Key[ 1])*0x00000100 +
             (unsigned long)(Key[ 2])*0x00010000 +
             (unsigned long)(Key[ 3])*0x01000000;
-    // On the first run of the SHA1 the random message is used 		
+    // On the first run of the SHA1 the random message is used
     if (i == 0)
     {
       Ws[4] = Random[0];
@@ -174,7 +174,7 @@ char *BQ27541_HMACSHA1_authenticate(char *Message,char *Key,char *result)
       Ws[7] = Random[3];
       Ws[8] = Random[4];
     }
-    // On the second run of the SHA1, H(Kd || M) is used		
+    // On the second run of the SHA1, H(Kd || M) is used
     else
     {
       Ws[4] = H[0];
@@ -183,7 +183,7 @@ char *BQ27541_HMACSHA1_authenticate(char *Message,char *Key,char *result)
       Ws[7] = H[3];
       Ws[8] = H[4];
     }
-    // The Work schedule variables Ws[9-15] remain the same regardless of 
+    // The Work schedule variables Ws[9-15] remain the same regardless of
     // which run of the SHA1.  These values are as required by bq26100.
     Ws[9]  = 0x80000000;
     Ws[10] = 0x00000000;
@@ -232,6 +232,6 @@ char *BQ27541_HMACSHA1_authenticate(char *Message,char *Key,char *result)
 	  *(result+4*i+2) = (char)((H[4-i] >> 16)&0x000000FF);
 	  *(result+4*i+3) = (char)((H[4-i] >> 24)&0x000000FF);
   }
-  
+
   return result;
 }

@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Copyright (c)  2014- 2014  Guangdong OPPO Mobile Telecommunications Corp., Ltd
-* VENDOR_EDIT
+* CONFIG_MACH_OPPO
 * Description: Source file for CBufferList.
 *           To allocate and free memory block safely.
 * Version   : 0.0
@@ -96,20 +96,20 @@
 #define BQ24188_STAT_FUNC_DISABLE			0x00
 
 #define BQ24188_TS_ENABLE_MASK				0x08
-#define BQ24188_TS_ENABLE					0x08			
+#define BQ24188_TS_ENABLE					0x08
 #define BQ24188_TS_DISABLE					0x00
 
 #define BQ24188_VINDPM_OFFSET				4200
 #define BQ24188_VINDPM_STEP_MV				84
-#define BQ24188_VINDPM_MASK					(BIT(2) | BIT(1) | BIT(0))	
+#define BQ24188_VINDPM_MASK					(BIT(2) | BIT(1) | BIT(0))
 #define BQ24188_VINDPM_ACTIVE				BIT(6)
 #define BQ24188_VINDPM_STATUS_MASK			BIT(6)
 
 #define BQ24188_VFLOAT_STEP_MV				20
 
-#define BQ24188_BOOST_ILIM_MASK				BIT(4)	
-#define BQ24188_BOOST_ILIM_500MA			0x00	
-#define BQ24188_BOOST_ILIM_1000MA			BIT(4)	
+#define BQ24188_BOOST_ILIM_MASK				BIT(4)
+#define BQ24188_BOOST_ILIM_500MA			0x00
+#define BQ24188_BOOST_ILIM_1000MA			BIT(4)
 
 
 OPPO_BQ24188_EXT int bq24188_get_prop_charge_type(struct opchg_charger *chip);

@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2014-2015, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -38,24 +38,12 @@
 #include <linux/qpnp-revid.h>
 #include <uapi/linux/vm_bms.h>
 
-#ifdef VENDOR_EDIT
-//Fuchun.Liao@Mobile.BSP.CHG 2014-10-09 add for use different battery-data
+#ifdef CONFIG_MACH_OPPO
 #include <linux/qpnp-charger.h>
 #include <soc/oppo/oppo_project.h>
-#endif	//VENDOR_EDIT
 
-/*Fuchun.Liao@Mobile.BSP.CHG 2014-08-02 add for debug*/
-/*
-#undef pr_debug
-#define pr_debug(fmt, ...) \
-	pr_err(fmt, ##__VA_ARGS__)
-*/
-/*Fuchun.Liao add end*/
-
-#ifdef VENDOR_EDIT
-//Fuchun.Liao@Mobile.BSP.CHG 2014-10-13 add for soc_jumped when charger_boot
 extern unsigned int boot_reason;
-#define PON_REASON_HARD_RESET	1
+#define PON_REASON_HARD_RESET		1
 #define PON_REASON_DC_CHG		4
 #define PON_REASON_USB_CHG		5
 #define PON_REASON_CBLPWR		7
@@ -203,6 +191,7 @@ struct bms_dt_cfg {
 	int				cfg_low_temp_threshold;
 	int				cfg_ibat_avg_samples;
 	int				cfg_battery_aging_comp;
+	bool				cfg_use_reported_soc;
 };
 
 struct qpnp_bms_chip {
@@ -266,6 +255,7 @@ struct qpnp_bms_chip {
 	u16				charge_cycles;
 	unsigned int			start_soc;
 	unsigned int			end_soc;
+	unsigned int			chg_start_soc;
 
 	struct bms_battery_data		*batt_data;
 	struct bms_dt_cfg		dt;
@@ -294,6 +284,13 @@ struct qpnp_bms_chip {
 	struct power_supply		bms_psy;
 	struct power_supply		*batt_psy;
 	struct power_supply		*usb_psy;
+	bool				reported_soc_in_use;
+	bool				charger_removed_since_full;
+	bool				charger_reinserted;
+	bool				reported_soc_high_current;
+	int				reported_soc;
+	int				reported_soc_change_sec;
+	int				reported_soc_delta;
 };
 
 static struct qpnp_bms_chip *the_chip;
@@ -439,24 +436,20 @@ static int backup_ocv_soc(struct qpnp_bms_chip *chip, int ocv_uv, int soc)
 
 	return rc;
 }
-#ifdef VENDOR_EDIT
-//Fuchun.Liao@Mobile.BSP.CHG 2014-10-09 add for use different battery-data
+
+#ifdef CONFIG_MACH_OPPO
 int opchg_backup_ocv_soc(int soc)
 {
-	int rc=0;
+	int rc;
 	static int soc_temp =0;
-	
-	if(the_chip == NULL){
-		pr_err("%s the_chip is NULL\n",__func__);
+
+	if (the_chip == NULL) {
+		pr_err("%s the_chip is NULL\n", __func__);
 		return -1;
 	}
-	
-	
-	rc = backup_ocv_soc(the_chip,the_chip->last_ocv_uv,soc);
-	if(rc)
-	{
-		pr_err("%s fail,rc = %d\n",__func__,rc);
-	}
+	rc = backup_ocv_soc(the_chip, the_chip->last_ocv_uv, soc);
+	if (rc)
+		pr_err("%s fail,rc = %d\n", __func__, rc);
 	else
 	{
 		if(soc_temp != soc )
@@ -468,6 +461,7 @@ int opchg_backup_ocv_soc(int soc)
 	return the_chip->last_ocv_uv;
 }
 #endif
+
 static int get_current_time(unsigned long *now_tm_sec)
 {
 	struct rtc_time tm;
@@ -1005,7 +999,7 @@ static int lookup_soc_ocv(struct qpnp_bms_chip *chip, int ocv_uv, int batt_temp)
 
 	if (chip->batt_data->ibat_acc_lut) {
 		/* Apply  ACC logic only if we discharging */
-		if (!is_battery_charging(chip) && chip->current_now > 0) {
+		if (chip->current_now > 0) {
 
 			/*
 			 * IBAT averaging is disabled at low temp.
@@ -1464,10 +1458,7 @@ static int report_eoc(struct qpnp_bms_chip *chip)
 			rc = chip->batt_psy->set_property(chip->batt_psy,
 					POWER_SUPPLY_PROP_STATUS, &ret);
 			if (rc) {
-				#ifdef VENDOR_EDIT
-				//MoFei@EXP.BaseDrv.charge,2016/4/29 delete this log in release version
-				pr_debug("Unable to set 'STATUS' rc=%d\n", rc);
-				#endif  /*VENDOR_EDIT*/
+				pr_err("Unable to set 'STATUS' rc=%d\n", rc);
 				return rc;
 			}
 			chip->eoc_reported = true;
@@ -1551,6 +1542,14 @@ static void check_eoc_condition(struct qpnp_bms_chip *chip)
 					chip->ocv_at_100 = -EINVAL;
 				}
 			}
+			if (chip->dt.cfg_use_reported_soc) {
+				/* begin reported_soc process */
+				chip->reported_soc_in_use = true;
+				chip->charger_removed_since_full = false;
+				chip->charger_reinserted = false;
+				chip->reported_soc = 100;
+				pr_debug("Begin reported_soc process\n");
+			}
 		}
 	} else {
 		if (chip->last_ocv_uv >= chip->ocv_at_100) {
@@ -1564,10 +1563,15 @@ static void check_eoc_condition(struct qpnp_bms_chip *chip)
 			 * This gets called once when the SOC falls
 			 * below 100.
 			 */
-			ret.intval = POWER_SUPPLY_STATUS_DISCHARGING;
-			chip->batt_psy->set_property(chip->batt_psy,
-						POWER_SUPPLY_PROP_STATUS, &ret);
-
+			if (chip->reported_soc_in_use
+					&& chip->reported_soc == 100) {
+				pr_debug("reported_soc=100, last_soc=%d, do not send DISCHARING status\n",
+						chip->last_soc);
+			} else {
+				ret.intval = POWER_SUPPLY_STATUS_DISCHARGING;
+				chip->batt_psy->set_property(chip->batt_psy,
+					POWER_SUPPLY_PROP_STATUS, &ret);
+			}
 			pr_debug("SOC dropped (%d) discarding ocv_at_100\n",
 							chip->last_soc);
 			chip->ocv_at_100 = -EINVAL;
@@ -1582,6 +1586,39 @@ static int report_voltage_based_soc(struct qpnp_bms_chip *chip)
 	return chip->prev_voltage_based_soc;
 }
 
+static int prepare_reported_soc(struct qpnp_bms_chip *chip)
+{
+	if (chip->charger_removed_since_full == false) {
+		/*
+		 * charger is not removed since full,
+		 * keep reported_soc as 100 and calculate the delta soc
+		 * between reported_soc and last_soc
+		 */
+		chip->reported_soc = 100;
+		chip->reported_soc_delta = 100 - chip->last_soc;
+		pr_debug("Keep at reported_soc 100, reported_soc_delta=%d, last_soc=%d\n",
+						chip->reported_soc_delta,
+						chip->last_soc);
+	} else {
+		/* charger is removed since full */
+		if (chip->charger_reinserted) {
+			/*
+			 * charger reinserted, keep the reported_soc
+			 * until it equals to last_soc.
+			 */
+			if (chip->reported_soc == chip->last_soc) {
+				chip->reported_soc_in_use = false;
+				chip->reported_soc_high_current = false;
+				pr_debug("reported_soc equals to last_soc, stop reported_soc process\n");
+			}
+			chip->reported_soc_change_sec = 0;
+		}
+	}
+	pr_debug("Reporting reported_soc=%d, last_soc=%d\n",
+					chip->reported_soc, chip->last_soc);
+	return chip->reported_soc;
+}
+
 #define SOC_CATCHUP_SEC_MAX		600
 #define SOC_CATCHUP_SEC_PER_PERCENT	60
 #define MAX_CATCHUP_SOC	(SOC_CATCHUP_SEC_MAX / SOC_CATCHUP_SEC_PER_PERCENT)
@@ -1592,8 +1629,7 @@ static int report_vm_bms_soc(struct qpnp_bms_chip *chip)
 	int time_since_last_change_sec = 0, charge_time_sec = 0;
 	unsigned long last_change_sec;
 	bool charging;
-#ifdef VENDOR_EDIT
-//Fuchun.Liao@Mobile.BSP.CHG 2015-01-10 add for pon_soc is 98% after quick_boot charge_full
+#ifdef CONFIG_MACH_OPPO
 	static int report_times = 0;
 #endif
 
@@ -1604,14 +1640,16 @@ static int report_vm_bms_soc(struct qpnp_bms_chip *chip)
 
 	charging = is_battery_charging(chip);
 
-	pr_debug("charging=%d last_soc=%d soc=%d last_soc_unbound=%d\n",
-		charging, chip->last_soc,soc, chip->last_soc_unbound);
+	pr_debug("charging=%d last_soc=%d last_soc_unbound=%d\n",
+		charging, chip->last_soc, chip->last_soc_unbound);
 	/*
 	 * account for charge time - limit it to SOC_CATCHUP_SEC to
 	 * avoid overflows when charging continues for extended periods
 	 */
 	if (charging && chip->last_soc != -EINVAL) {
-		if (chip->charge_start_tm_sec == 0) {
+		if (chip->charge_start_tm_sec == 0 ||
+			(chip->catch_up_time_sec == 0 &&
+				(abs(soc - chip->last_soc) >= MIN_SOC_UUC))) {
 			/*
 			 * calculating soc for the first time
 			 * after start of chg. Initialize catchup time
@@ -1623,17 +1661,25 @@ static int report_vm_bms_soc(struct qpnp_bms_chip *chip)
 			else
 				chip->catch_up_time_sec = SOC_CATCHUP_SEC_MAX;
 
+			chip->chg_start_soc = chip->last_soc;
+
 			if (chip->catch_up_time_sec < 0)
 				chip->catch_up_time_sec = 0;
 			chip->charge_start_tm_sec = last_change_sec;
+
+			pr_debug("chg_start_soc=%d charge_start_tm_sec=%d catch_up_time_sec=%d\n",
+				chip->chg_start_soc, chip->charge_start_tm_sec,
+						chip->catch_up_time_sec);
 		}
 
 		charge_time_sec = min(SOC_CATCHUP_SEC_MAX, (int)last_change_sec
 				- chip->charge_start_tm_sec);
 
 		/* end catchup if calculated soc and last soc are same */
-		if (chip->last_soc == soc)
+		if (chip->last_soc == soc) {
 			chip->catch_up_time_sec = 0;
+			chip->chg_start_soc = chip->last_soc;
+		}
 	}
 
 	if (chip->last_soc != -EINVAL) {
@@ -1651,7 +1697,7 @@ static int report_vm_bms_soc(struct qpnp_bms_chip *chip)
 		else if (chip->last_soc < soc && soc != 100)
 			soc = scale_soc_while_chg(chip, charge_time_sec,
 					chip->catch_up_time_sec,
-					soc, chip->last_soc);
+					soc, chip->chg_start_soc);
 
 		/*
 		 * if the battery is close to cutoff or if the batt_temp
@@ -1693,15 +1739,14 @@ static int report_vm_bms_soc(struct qpnp_bms_chip *chip)
 	 */
 	soc = bound_soc(soc);
 
-#ifdef VENDOR_EDIT
-//Fuchun.Liao@Mobile.BSP.CHG 2015-01-10 add for pon_soc is 98% after quick_boot charge_full
-	if((report_times < 5) && chip->last_soc == 100 && soc > 95 && chip->calculated_soc >95){
-		pr_err("soc:%d,chip->last_soc:%d,report_times:%d\n",soc,chip->last_soc,report_times);
+#ifdef CONFIG_MACH_OPPO
+	if ((report_times < 10) && chip->last_soc == 100 && soc > 90) {
+		pr_debug("soc: %d, chip->last_soc: %d, report_times: %d\n",
+				soc, chip->last_soc, report_times);
 		report_times++;
 		chip->last_soc = 100;
-	}
-	else if ((soc != chip->last_soc) || (soc == 100)) {
-		report_times = 5;
+	} else if ((soc != chip->last_soc) || (soc == 100)) {
+		report_times = 10;
 		chip->last_soc = soc;
 		check_eoc_condition(chip);
 		if ((chip->dt.cfg_soc_resume_limit > 0) && !charging)
@@ -1729,10 +1774,13 @@ static int report_vm_bms_soc(struct qpnp_bms_chip *chip)
 	 * initial OCV.
 	 */
 
-#ifdef VENDOR_EDIT
-//Fuchun.Liao@Mobile.BSP.CHG 2015-01-10 add for pon_soc is 98% after quick_boot charge_full
-	//backup_ocv_soc(chip, chip->last_ocv_uv, chip->last_soc);
+#ifndef CONFIG_MACH_OPPO
+	backup_ocv_soc(chip, chip->last_ocv_uv, chip->last_soc);
 #endif
+
+	if (chip->reported_soc_in_use)
+		return prepare_reported_soc(chip);
+
 	pr_debug("Reported SOC=%d\n", chip->last_soc);
 
 	return chip->last_soc;
@@ -1979,12 +2027,94 @@ static int calculate_soc_from_voltage(struct qpnp_bms_chip *chip)
 	return 0;
 }
 
+static void calculate_reported_soc(struct qpnp_bms_chip *chip)
+{
+	union power_supply_propval ret = {0,};
+
+	if (chip->last_soc < 0) {
+		pr_debug("last_soc is not ready, return\n");
+		return;
+	}
+
+	if (chip->reported_soc > chip->last_soc) {
+		/*send DISCHARGING status if the reported_soc drops from 100 */
+		if (chip->reported_soc == 100) {
+			ret.intval = POWER_SUPPLY_STATUS_DISCHARGING;
+			chip->batt_psy->set_property(chip->batt_psy,
+				POWER_SUPPLY_PROP_STATUS, &ret);
+			pr_debug("Report discharging status, reported_soc=%d, last_soc=%d\n",
+					chip->reported_soc, chip->last_soc);
+		}
+		/*
+		* reported_soc_delta is used to prevent
+		* the big change in last_soc,
+		* this is not used in high current mode
+		*/
+		if (chip->reported_soc_delta > 0)
+			chip->reported_soc_delta--;
+
+		if (chip->reported_soc_high_current)
+			chip->reported_soc--;
+		else
+			chip->reported_soc = chip->last_soc
+					+ chip->reported_soc_delta;
+
+		pr_debug("New reported_soc=%d, last_soc is=%d\n",
+					chip->reported_soc, chip->last_soc);
+	} else {
+		chip->reported_soc_in_use = false;
+		chip->reported_soc_high_current = false;
+		pr_debug("reported_soc equals last_soc,stop reported_soc process\n");
+	}
+	pr_debug("bms power_supply_changed\n");
+	power_supply_changed(&chip->bms_psy);
+}
+
+static int clamp_soc_based_on_voltage(struct qpnp_bms_chip *chip, int soc)
+{
+	int rc, vbat_uv;
+
+	rc = get_battery_voltage(chip, &vbat_uv);
+	if (rc < 0) {
+		pr_err("adc vbat failed err = %d\n", rc);
+		return soc;
+	}
+
+	/* only clamp when discharging */
+	if (is_battery_charging(chip))
+		return soc;
+
+	if (soc <= 0 && vbat_uv > chip->dt.cfg_v_cutoff_uv) {
+		pr_debug("clamping soc to 1, vbat (%d) > cutoff (%d)\n",
+					vbat_uv, chip->dt.cfg_v_cutoff_uv);
+		return 1;
+	} else {
+		pr_debug("not clamping, using soc = %d, vbat = %d and cutoff = %d\n",
+				soc, vbat_uv, chip->dt.cfg_v_cutoff_uv);
+		return soc;
+	}
+}
+
+static void battery_voltage_check(struct qpnp_bms_chip *chip)
+{
+	int rc, vbat_uv = 0;
+
+	rc = get_battery_voltage(chip, &vbat_uv);
+	if (rc < 0) {
+		pr_err("Failed to read battery-voltage rc=%d\n", rc);
+	} else {
+		very_low_voltage_check(chip, vbat_uv);
+		cv_voltage_check(chip, vbat_uv);
+	}
+}
+
+#define UI_SOC_CATCHUP_TIME	(60)
 static void monitor_soc_work(struct work_struct *work)
 {
 	struct qpnp_bms_chip *chip = container_of(work,
 				struct qpnp_bms_chip,
 				monitor_soc_work.work);
-	int rc, vbat_uv = 0, new_soc = 0, batt_temp;
+	int rc, new_soc = 0, batt_temp;
 
 	bms_stay_awake(&chip->vbms_soc_wake_source);
 
@@ -2000,13 +2130,7 @@ static void monitor_soc_work(struct work_struct *work)
 		chip->last_soc = -EINVAL;
 		new_soc = 100;
 	} else {
-		rc = get_battery_voltage(chip, &vbat_uv);
-		if (rc < 0) {
-			pr_err("Failed to read battery-voltage rc=%d\n", rc);
-		} else {
-			very_low_voltage_check(chip, vbat_uv);
-			cv_voltage_check(chip, vbat_uv);
-		}
+		battery_voltage_check(chip);
 
 		if (chip->dt.cfg_use_voltage_soc) {
 			calculate_soc_from_voltage(chip);
@@ -2024,10 +2148,18 @@ static void monitor_soc_work(struct work_struct *work)
 			}
 			new_soc = lookup_soc_ocv(chip, chip->last_ocv_uv,
 								batt_temp);
+			/* clamp soc due to BMS hw/sw immaturities */
+			new_soc = clamp_soc_based_on_voltage(chip, new_soc);
+
 			if (chip->calculated_soc != new_soc) {
 				pr_debug("SOC changed! new_soc=%d prev_soc=%d\n",
 						new_soc, chip->calculated_soc);
 				chip->calculated_soc = new_soc;
+				/*
+				 * To recalculate the catch-up time, clear it
+				 * when SOC changes.
+				 */
+				chip->catch_up_time_sec = 0;
 
 				if (chip->calculated_soc == 100)
 					/* update last_soc immediately */
@@ -2053,6 +2185,20 @@ static void monitor_soc_work(struct work_struct *work)
 					chip->dt.cfg_use_voltage_soc)
 		schedule_delayed_work(&chip->monitor_soc_work,
 			msecs_to_jiffies(get_calculation_delay_ms(chip)));
+
+	if (chip->reported_soc_in_use && chip->charger_removed_since_full
+				&& !chip->charger_reinserted) {
+		/* record the elapsed time after last reported_soc change */
+		chip->reported_soc_change_sec += chip->delta_time_s;
+		pr_debug("reported_soc_change_sec=%d\n",
+					chip->reported_soc_change_sec);
+
+		/* above the catch up time, calculate new reported_soc */
+		if (chip->reported_soc_change_sec > UI_SOC_CATCHUP_TIME) {
+			calculate_reported_soc(chip);
+			chip->reported_soc_change_sec = 0;
+		}
+	}
 
 	mutex_unlock(&chip->last_soc_mutex);
 
@@ -2119,6 +2265,7 @@ static enum power_supply_property bms_power_props[] = {
 	POWER_SUPPLY_PROP_STATUS,
 	POWER_SUPPLY_PROP_RESISTANCE,
 	POWER_SUPPLY_PROP_RESISTANCE_CAPACITIVE,
+	POWER_SUPPLY_PROP_RESISTANCE_NOW,
 	POWER_SUPPLY_PROP_CURRENT_NOW,
 	POWER_SUPPLY_PROP_VOLTAGE_OCV,
 	POWER_SUPPLY_PROP_HI_POWER,
@@ -2170,6 +2317,12 @@ static int qpnp_vm_bms_power_get_property(struct power_supply *psy,
 			val->intval = chip->batt_data->rbatt_capacitive_mohm;
 		if (chip->dt.cfg_r_conn_mohm > 0)
 			val->intval += chip->dt.cfg_r_conn_mohm;
+		break;
+	case POWER_SUPPLY_PROP_RESISTANCE_NOW:
+		rc = get_batt_therm(chip, &value);
+		if (rc < 0)
+			value = BMS_DEFAULT_TEMP;
+		val->intval = get_rbatt(chip, chip->calculated_soc, value);
 		break;
 	case POWER_SUPPLY_PROP_CURRENT_NOW:
 		val->intval = get_prop_bms_current_now(chip);
@@ -2336,6 +2489,42 @@ static void battery_status_check(struct qpnp_bms_chip *chip)
 	}
 }
 
+#define HIGH_CURRENT_TH 2
+static void reported_soc_check_status(struct qpnp_bms_chip *chip)
+{
+	u8 present;
+
+	present = is_charger_present(chip);
+	pr_debug("usb_present=%d\n", present);
+
+	if (!present && !chip->charger_removed_since_full) {
+		chip->charger_removed_since_full = true;
+		pr_debug("reported_soc: charger removed since full\n");
+		return;
+	}
+	if (chip->reported_soc_high_current) {
+		pr_debug("reported_soc in high current mode, return\n");
+		return;
+	}
+	if ((chip->reported_soc - chip->last_soc) >
+			(100 - chip->dt.cfg_soc_resume_limit
+						+ HIGH_CURRENT_TH)) {
+		chip->reported_soc_high_current = true;
+		chip->charger_removed_since_full = true;
+		chip->charger_reinserted = false;
+		pr_debug("reported_soc enters high current mode\n");
+		return;
+	}
+	if (present && chip->charger_removed_since_full) {
+		chip->charger_reinserted = true;
+		pr_debug("reported_soc: charger reinserted\n");
+	}
+	if (!present && chip->charger_removed_since_full) {
+		chip->charger_reinserted = false;
+		pr_debug("reported_soc: charger removed again\n");
+	}
+}
+
 static void qpnp_vm_bms_ext_power_changed(struct power_supply *psy)
 {
 	struct qpnp_bms_chip *chip = container_of(psy, struct qpnp_bms_chip,
@@ -2344,6 +2533,13 @@ static void qpnp_vm_bms_ext_power_changed(struct power_supply *psy)
 	pr_debug("Triggered!\n");
 	battery_status_check(chip);
 	battery_insertion_check(chip);
+
+	mutex_lock(&chip->last_soc_mutex);
+	battery_voltage_check(chip);
+	mutex_unlock(&chip->last_soc_mutex);
+
+	if (chip->reported_soc_in_use)
+		reported_soc_check_status(chip);
 }
 
 
@@ -2709,13 +2905,12 @@ static void adjust_pon_ocv(struct qpnp_bms_chip *chip, int batt_temp)
 		* the huge rbatt values at pc < 2 which can disrupt the pon_ocv
 		* calculations.
 		*/
-		if (pc < 2){
-#ifndef VENDOR_EDIT	//Fuchun.Liao@Mobile.BSP.CHG 2014-08-21 modify for rbatt when soc =0 in low_temp
+		if (pc < 2)
+#ifndef CONFIG_MACH_OPPO
 			pc = 2;
 #else
 			pc = 5;
 #endif
-		}
 		rbatt_mohm = get_rbatt(chip, pc, batt_temp);
 		/* convert die_temp to DECIDEGC */
 		die_temp = (int)result.physical / 100;
@@ -2740,29 +2935,20 @@ static int calculate_initial_soc(struct qpnp_bms_chip *chip)
 		batt_temp = BMS_DEFAULT_TEMP;
 	}
 
-	/*get last_ocv_uv*/
 	rc = read_and_update_ocv(chip, batt_temp, true);
 	if (rc) {
 		pr_err("Unable to read PON OCV rc=%d\n", rc);
 		return rc;
 	}
 
-	/*get shutdown_ocv*/
 	rc = read_shutdown_ocv_soc(chip);
 	if (rc < 0  || chip->dt.cfg_ignore_shutdown_soc)
 		chip->shutdown_soc_invalid = true;
 
-#ifdef VENDOR_EDIT
-/* OPPO 2015-05-23 sjc Add for reason */
-	pr_info("boot_reason=%d last_ocv_raw=0x%x,last_ocv_uv=%d,shutdown_ocv=%d shutdown_soc=%d \n", 
-			boot_reason, chip->last_ocv_raw, chip->last_ocv_uv, chip->shutdown_ocv, chip->shutdown_soc);
-#endif
-
-#ifndef VENDOR_EDIT
-//Fuchun.Liao@Mobile.BSP.CHG 2015-01-28 modify for use hard_reset instead of warm_reset
+#ifndef CONFIG_MACH_OPPO
 	if (chip->warm_reset) {
 #else
-	if((boot_reason == PON_REASON_HARD_RESET) || (chip->warm_reset)) {
+	if ((boot_reason == PON_REASON_HARD_RESET) || (chip->warm_reset)) {
 #endif
 		/*
 		 * if we have powered on from warm reset -
@@ -2770,41 +2956,35 @@ static int calculate_initial_soc(struct qpnp_bms_chip *chip)
 		 * estimate OCV
 		 */
 		if (chip->shutdown_soc_invalid) {
-			
+			pr_debug("Estimate OCV\n");
 			est_ocv = estimate_ocv(chip);
 			if (est_ocv <= 0) {
 				pr_err("Unable to estimate OCV rc=%d\n",
 								est_ocv);
 				return -EINVAL;
 			}
-			
 			chip->last_ocv_uv = est_ocv;
 			chip->calculated_soc = lookup_soc_ocv(chip, est_ocv,
 								batt_temp);
-			pr_info("oppo_debug Estimate OCV last_ocv_uv=%d, last_soc=%d, est_ocv=%d,calculated_soc=%d\n",chip->last_ocv_uv,chip->last_soc,est_ocv,chip->calculated_soc);
 		} else {
 			chip->last_ocv_uv = chip->shutdown_ocv;
 			chip->last_soc = chip->shutdown_soc;
 			chip->calculated_soc = lookup_soc_ocv(chip,
 						chip->shutdown_ocv, batt_temp);
-			pr_info("oppo_debug Using shutdown SOC last_ocv_uv=%d, last_soc=%d, shutdown_ocv=%d,calculated_soc=%d\n",chip->last_ocv_uv,chip->last_soc,chip->shutdown_ocv,chip->calculated_soc);
+			pr_debug("Using shutdown SOC\n");
 		}
-	}
-#ifdef VENDOR_EDIT
-/* OPPO 2015-05-23 sjc Add for soc_jumped when charger_boot */
-	else if (!chip->shutdown_soc_invalid
-			&& (boot_reason == PON_REASON_USB_CHG || boot_reason == PON_REASON_DC_CHG || boot_reason == PON_REASON_CBLPWR)) {
-
+#ifdef CONFIG_MACH_OPPO
+	} else if (!chip->shutdown_soc_invalid
+			&& (boot_reason == PON_REASON_USB_CHG ||
+			    boot_reason == PON_REASON_DC_CHG ||
+			    boot_reason == PON_REASON_CBLPWR)) {
 		chip->last_ocv_uv = chip->shutdown_ocv;
 		chip->last_soc = chip->shutdown_soc;
 		chip->calculated_soc = lookup_soc_ocv(chip,
 					chip->shutdown_ocv, batt_temp);
-		
-		pr_info("oppo_debug charger_boot Using shutdown SOC last_ocv_uv=%d, last_soc=%d,shutdown_ocv=%d,calculated_soc=%d\n",
-			chip->last_ocv_uv,chip->last_soc,chip->shutdown_ocv,chip->calculated_soc);
-	} 
+		pr_debug("charger_boot Using shutdown SOC\n");
 #endif
-	else {
+	} else {
 		/*
 		 * In PM8916 2.0 PON OCV calculation is delayed due to
 		 * change in the ordering of power-on sequence of LDO6.
@@ -2816,27 +2996,19 @@ static int calculate_initial_soc(struct qpnp_bms_chip *chip)
 		 /* !warm_reset use PON OCV only if shutdown SOC is invalid */
 		chip->calculated_soc = lookup_soc_ocv(chip,
 					chip->last_ocv_uv, batt_temp);
-#ifndef VENDOR_EDIT
-/* OPPO MoFei@EXP.BaseDrv.charge,2016/05/04 motify for soc jump after power on */
 		if (!chip->shutdown_soc_invalid &&
 			(abs(chip->shutdown_soc - chip->calculated_soc) <
 				chip->dt.cfg_shutdown_soc_valid_limit)) {
-#else
-		if (!chip->shutdown_soc_invalid &&
-			(abs(chip->shutdown_soc - chip->calculated_soc) <=
-				chip->dt.cfg_shutdown_soc_valid_limit)) {
-#endif
 			chip->last_ocv_uv = chip->shutdown_ocv;
 			chip->last_soc = chip->shutdown_soc;
-#ifndef VENDOR_EDIT
-/* OPPO 2015-05-23 sjc Delete for shutdown for a long time, we use last_ocv_uv to lookup_soc_ocv() */
+#ifndef CONFIG_MACH_OPPO
 			chip->calculated_soc = lookup_soc_ocv(chip,
 						chip->shutdown_ocv, batt_temp);
 #endif
-			pr_info("oppo_debug Using init SOC last_ocv_uv=%d, last_soc=%d,calculated_soc=%d\n",chip->last_ocv_uv,chip->last_soc,chip->calculated_soc);
+			pr_debug("Using shutdown SOC\n");
 		} else {
 			chip->shutdown_soc_invalid = true;
-			pr_info("oppo_debug Using PON SOC last_ocv_uv=%d, last_soc=%d,calculated_soc=%d\n",chip->last_ocv_uv,chip->last_soc,chip->calculated_soc);
+			pr_debug("Using PON SOC\n");
 		}
 	}
 	/* store the start-up OCV for voltage-based-soc */
@@ -2876,7 +3048,7 @@ static int calculate_initial_aging_comp(struct qpnp_bms_chip *chip)
 
 static int bms_load_hw_defaults(struct qpnp_bms_chip *chip)
 {
-	u8 val, state, bms_en = 0;
+	u8 val, bms_en = 0;
 	u32 interval[2], count[2], fifo[2];
 	int rc;
 
@@ -2974,14 +3146,10 @@ static int bms_load_hw_defaults(struct qpnp_bms_chip *chip)
 	get_fifo_length(chip, S2_STATE, &fifo[1]);
 
 	/* Force the BMS state to S2 at boot-up */
-	rc = get_fsm_state(chip, &state);
-	if (rc)
-		pr_err("Unable to get FSM state rc=%d\n", rc);
-	if (rc || (state != S2_STATE)) {
-		pr_debug("Forcing S2 state\n");
-		rc = force_fsm_state(chip, S2_STATE);
-		if (rc)
-			pr_err("Unable to set FSM state rc=%d\n", rc);
+	rc = force_fsm_state(chip, S2_STATE);
+	if (rc) {
+		pr_err("Unable to force S2 state rc=%d\n", rc);
+		return rc;
 	}
 
 	rc = qpnp_read_wrapper(chip, &bms_en, chip->base + EN_CTL_REG, 1);
@@ -3213,6 +3381,7 @@ static int show_bms_config(struct seq_file *m, void *data)
 			"force_s3_on_suspend\t=\t%d\n"
 			"report_charger_eoc\t=\t%d\n"
 			"aging_compensation\t=\t%d\n"
+			"use_reported_soc\t=\t%d\n"
 			"s1_sample_interval_ms\t=\t%d\n"
 			"s2_sample_interval_ms\t=\t%d\n"
 			"s1_sample_count\t=\t%d\n"
@@ -3234,6 +3403,7 @@ static int show_bms_config(struct seq_file *m, void *data)
 			chip->dt.cfg_force_s3_on_suspend,
 			chip->dt.cfg_report_charger_eoc,
 			chip->dt.cfg_battery_aging_comp,
+			chip->dt.cfg_use_reported_soc,
 			s1_sample_interval,
 			s2_sample_interval,
 			s1_sample_count,
@@ -3362,8 +3532,7 @@ static int set_battery_data(struct qpnp_bms_chip *chip)
 		pr_err("cannot read battery id err = %lld\n", battery_id);
 		return battery_id;
 	}
-#ifndef VENDOR_EDIT	
-//Fuchun.Liao@Mobile.BSP.CHG 2014-10-09 modify to use different battery-data
+#ifndef CONFIG_MACH_OPPO
 	node = of_find_node_by_name(chip->spmi->dev.of_node,
 					"qcom,battery-data");
 	if (!node) {
@@ -3371,260 +3540,44 @@ static int set_battery_data(struct qpnp_bms_chip *chip)
 			return -EINVAL;
 	}
 #else
-	if(is_project(OPPO_14043))
-	{
+	if (is_project(OPPO_15109)) {
 		rc = opchg_get_bq2022_manufacture_id();
-		if(rc < 0){
-			pr_err("%s get bq2022 manu id fail\n",__func__);
+		if (rc < 0) {
+			pr_err("%s get bq2022 manu id fail\n", __func__);
 			return -EPROBE_DEFER;
-		} else if(rc == BATTERY_1800MAH_MM){
-			node = of_find_node_by_name(chip->spmi->dev.of_node,
-						"qcom,battery-data-mingmei");
-			if (!node) {
-				pr_err("No available MingMei batterydata\n");
-				return -EINVAL;
-			}
-		} else if(rc == BATTERY_1800MAH_XWD){
-			node = of_find_node_by_name(chip->spmi->dev.of_node,
-						"qcom,battery-data-xwd");
-			if (!node) {
-				pr_err("No available XWD batterydata\n");
-				return -EINVAL;
-			}
-		}
-	} 
-	else if(is_project(OPPO_14037) || is_project(OPPO_15057))
-	{
-		rc = opchg_get_bq2022_manufacture_id();
-		if(rc < 0){
-			pr_err("%s get bq2022 manu id fail\n",__func__);
-			return -EPROBE_DEFER;
-		} else if(rc == BATTERY_2020MAH_SONY){
-			node = of_find_node_by_name(chip->spmi->dev.of_node,
-						"qcom,battery-data-sony");
-			if (!node) {
-				pr_err("No available sony batterydata\n");
-				return -EINVAL;
-			}
-		} else if(rc == BATTERY_2020MAH_ATL){
+		} else if (rc == BATTERY_2420MAH_ATL) {
 			node = of_find_node_by_name(chip->spmi->dev.of_node,
 						"qcom,battery-data-atl");
 			if (!node) {
 				pr_err("No available atl batterydata\n");
 				return -EINVAL;
 			}
-		}
-	} 
-	else if(is_project(OPPO_15035))
-	{
-		rc = opchg_get_bq2022_manufacture_id();
-		if(rc < 0){
-			pr_err("%s get bq2022 manu id fail\n",__func__);
-			return -EPROBE_DEFER;
-		} else if(rc == BATTERY_2420MAH_ATL){
-			node = of_find_node_by_name(chip->spmi->dev.of_node,
-						"qcom,battery-data-atl");
-			if (!node) {
-				pr_err("No available atl batterydata\n");
-				return -EINVAL;
-			}
-			else
-			{
-				pr_err("available atl batterydata\n");
-			}
-		}
-		else if(rc == BATTERY_2420MAH_SDI){
+		} else if (rc == BATTERY_2420MAH_SDI) {
 			node = of_find_node_by_name(chip->spmi->dev.of_node,
 						"qcom,battery-data-sdi");
 			if (!node) {
 				pr_err("No available sdi batterydata\n");
 				return -EINVAL;
 			}
-			else
-			{
-				pr_err("available sdi batterydata\n");
-			}
-		}
-		else if(rc == BATTERY_2420MAH_SONY){
-			node = of_find_node_by_name(chip->spmi->dev.of_node,
-						"qcom,battery-data-sony");
-			if (!node) {
-				pr_err("No available sony batterydata\n");
-				return -EINVAL;
-			}
-			else
-			{
-				pr_err("available sony batterydata\n");
-			}
-		} 
-	} 
-	else if(is_project(OPPO_15109))
-	{
-		#if 1
-		rc = opchg_get_bq2022_manufacture_id();
-		if(rc < 0){
-			pr_err("%s get bq2022 manu id fail\n",__func__);
-			return -EPROBE_DEFER;
-		} 
-		else if(rc == BATTERY_2420MAH_ATL)
-		{
-			node = of_find_node_by_name(chip->spmi->dev.of_node,
-						"qcom,battery-data-atl");
-			if (!node) {
-				pr_err("No available atl batterydata\n");
-				return -EINVAL;
-			}
-			else
-			{
-				pr_err("available atl batterydata\n");
-			}
-		}
-		else if(rc == BATTERY_2420MAH_SDI)
-		{
-			node = of_find_node_by_name(chip->spmi->dev.of_node,
-						"qcom,battery-data-sdi");
-			if (!node) {
-				pr_err("No available sdi batterydata\n");
-				return -EINVAL;
-			}
-			else
-			{
-				pr_err("available sdi batterydata\n");
-			}
-		}
-		else if(rc == BATTERY_2420MAH_LG)
-		{
+		} else if (rc == BATTERY_2420MAH_LG) {
 			node = of_find_node_by_name(chip->spmi->dev.of_node,
 						"qcom,battery-data-lg");
 			if (!node) {
 				pr_err("No available lg batterydata\n");
 				return -EINVAL;
 			}
-			else
-			{
-				pr_err("available lg batterydata\n");
-			}
-		} 
-		#else
+		}
+	} else if (is_project(OPPO_15399)) { 
 		node = of_find_node_by_name(chip->spmi->dev.of_node,
-					"qcom,battery-data-atl");
+					"qcom,battery-data-high-atl");
 		if (!node) {
 			pr_err("No available batterydata\n");
 			return -EINVAL;
-		}
-		else
-		{
-			pr_err("available atl batterydata\n");
-		}
-		#endif
-	}
-	else if(is_project(OPPO_15399))
-	{
-		#if 1
-		rc = opchg_get_bq2022_manufacture_id();
-		if(rc < 0){
-			pr_err("%s get bq2022 manu id fail\n",__func__);
-			return -EPROBE_DEFER;
-		} 
-		else if(rc == BATTERY_2420MAH_SDI)
-		{
-			node = of_find_node_by_name(chip->spmi->dev.of_node,
-						"qcom,battery-data-sdi");
-			if (!node) {
-				pr_err("No available atl batterydata\n");
-				return -EINVAL;
-			}
-			else
+		} else
 			{
-				pr_err("available atl batterydata\n");
+				pr_err("available high atl batterydata\n");
 			}
-		}
-		else if(rc == BATTERY_2550MAH_SDI)
-		{
-			node = of_find_node_by_name(chip->spmi->dev.of_node,
-						"qcom,battery-data-high-sdi");
-			if (!node) {
-				pr_err("No available high-sdi batterydata\n");
-				return -EINVAL;
-			}
-			else
-			{
-				pr_err("available high-sdi batterydata\n");
-			}
-		}
-		else if(rc == BATTERY_2550MAH_LG)
-		{
-			node = of_find_node_by_name(chip->spmi->dev.of_node,
-						"qcom,battery-data-high-lg");
-			if (!node) {
-				pr_err("No available high-lg batterydata\n");
-				return -EINVAL;
-			}
-			else
-			{
-				pr_err("available high-lg batterydata\n");
-			}
-		} 
-		else if(rc == BATTERY_2550MAH_ATL)
-		{
-			node = of_find_node_by_name(chip->spmi->dev.of_node,
-						"qcom,battery-data-high-atl");
-			if (!node) {
-				pr_err("No available high-atl batterydata\n");
-				return -EINVAL;
-			}
-			else
-			{
-				pr_err("available high-atl batterydata\n");
-			}
-		}
-		else if(rc == BATTERY_2420MAH_ATL)
-		{
-			node = of_find_node_by_name(chip->spmi->dev.of_node,
-						"qcom,battery-data-atl");
-			if (!node) {
-				pr_err("No available atl batterydata\n");
-				return -EINVAL;
-			}
-			else
-			{
-				pr_err("available atl batterydata\n");
-			}
-		} 
-		#else
-		node = of_find_node_by_name(chip->spmi->dev.of_node,
-					"qcom,battery-data-atl");
-		if (!node) {
-			pr_err("No available batterydata\n");
-			return -EINVAL;
-		}
-		else
-		{
-			pr_err("available atl batterydata\n");
-		}
-		#endif
-	}
-	else if (is_project(OPPO_15009)|| is_project(OPPO_15037) || is_project(OPPO_15029)) 
-	{
-		node = of_find_node_by_name(chip->spmi->dev.of_node,
-					"qcom,battery-data-sony");
-		if (!node) {
-			pr_err("No available batterydata\n");
-			return -EINVAL;
-		}
-	} 
-    //#ifdef VENDOR_EDIT 
-    /*chaoying.chen@EXP.BaseDrv.charge,2015/06/19  modify  for 15085*/
-    else if (is_project(OPPO_15085)) {
-		node = of_find_node_by_name(chip->spmi->dev.of_node,
-					"qcom,battery-data-sony");
-		if (!node) {
-			pr_err("No available batterydata\n");
-			return -EINVAL;
-		}
-	}
-    //#endif /*VENDOR_EDIT*/ 
-    else {
+    } else {
 		node = of_find_node_by_name(chip->spmi->dev.of_node,
 					"qcom,battery-data");
 		if (!node) {
@@ -3632,7 +3585,7 @@ static int set_battery_data(struct qpnp_bms_chip *chip)
 			return -EINVAL;
 		}
 	}
-#endif	//VENDOR_EDIT
+#endif
 
 	batt_data = devm_kzalloc(chip->dev,
 			sizeof(struct bms_battery_data), GFP_KERNEL);
@@ -3661,7 +3614,8 @@ static int set_battery_data(struct qpnp_bms_chip *chip)
 	rc = of_batterydata_read_data(node, batt_data, battery_id);
 	if (rc || !batt_data->pc_temp_ocv_lut
 		|| !batt_data->fcc_temp_lut
-		|| !batt_data->rbatt_sf_lut) {
+		|| !batt_data->rbatt_sf_lut
+		|| !batt_data->ibat_acc_lut) {
 		pr_err("battery data load failed\n");
 		devm_kfree(chip->dev, batt_data->fcc_temp_lut);
 		devm_kfree(chip->dev, batt_data->pc_temp_ocv_lut);
@@ -3842,6 +3796,8 @@ static int parse_bms_dt_properties(struct qpnp_bms_chip *chip)
 			"qcom,force-bms-active-on-charger");
 	chip->dt.cfg_battery_aging_comp = of_property_read_bool(
 			chip->spmi->dev.of_node, "qcom,batt-aging-comp");
+	chip->dt.cfg_use_reported_soc = of_property_read_bool(
+			chip->spmi->dev.of_node, "qcom,use-reported-soc");
 	pr_debug("v_cutoff_uv=%d, max_v=%d\n", chip->dt.cfg_v_cutoff_uv,
 					chip->dt.cfg_max_voltage_uv);
 	pr_debug("r_conn=%d shutdown_soc_valid_limit=%d low_temp_threshold=%d ibat_avg_samples=%d\n",
@@ -3859,6 +3815,8 @@ static int parse_bms_dt_properties(struct qpnp_bms_chip *chip)
 			chip->dt.cfg_disable_bms,
 			chip->dt.cfg_force_bms_active_on_charger,
 			chip->dt.cfg_battery_aging_comp);
+	pr_debug("use-reported-soc is %d\n",
+			chip->dt.cfg_use_reported_soc);
 
 	return 0;
 }
@@ -4013,35 +3971,25 @@ static int qpnp_vm_bms_probe(struct spmi_device *spmi)
 
 	/* read battery-id and select the battery profile */
 	rc = set_battery_data(chip);
-#ifndef VENDOR_EDIT
-//Fuchun.Liao@Mobile.BSP.CHG 2014-10-09 modify for use different battery-data
+#ifndef CONFIG_MACH_OPPO
 	if (rc) {
 		pr_err("Unable to read battery data %d\n", rc);
 		goto fail_init;
 	}
 #else
-	#if 0
-	if(rc == (-EPROBE_DEFER))
-		return -EPROBE_DEFER;
-    #else
-	if(rc == (-EPROBE_DEFER))
-	{
-		if(is_project(OPPO_15109))
-		{
+	if (rc == (-EPROBE_DEFER)) {
+		if (is_project(OPPO_15109)) {
 			pr_err("Unable to read battery data %d\n", rc);
 			goto fail_init;
-		}
-		else
-		{
+		} else {
 			return -EPROBE_DEFER;
 		}
-	}
-	#endif
-	else if(rc){
+	} else if (rc) {
 		pr_err("Unable to read battery data %d\n", rc);
 		goto fail_init;
 	}
-#endif	//VENDOR_EDIT
+#endif
+
 	/* set the battery profile */
 	rc = config_battery_data(chip->batt_data);
 	if (rc) {

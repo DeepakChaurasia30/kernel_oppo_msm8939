@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Copyright (c)  2015- 2016  Guangdong OPPO Mobile Telecommunications Corp., Ltd
-* VENDOR_EDIT
+* CONFIG_MACH_OPPO
 * Description: Source file for CBufferList.
 *           To allocate and free memory block safely.
 * Version   : 0.1

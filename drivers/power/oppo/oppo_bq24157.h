@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Copyright (c)  2014- 2014  Guangdong OPPO Mobile Telecommunications Corp., Ltd
-* VENDOR_EDIT
+* CONFIG_MACH_OPPO
 * Description: Source file for CBufferList.
 *           To allocate and free memory block safely.
 * Version   : 0.0
@@ -64,7 +64,7 @@
 #define BQ24157_LOWCHG_CURRENT_DISABLE		0x00
 
 #define BQ24157_FAST_CURRENT_MAX_MA			1250
-#define BQ24157_FAST_CURRENT_OFFSET_MA		550	
+#define BQ24157_FAST_CURRENT_OFFSET_MA		550
 #define BQ24157_FAST_CURRENT_STEP_MA		100
 #define BQ24157_FAST_CURRENT_LOWCHG_MA		325
 

@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Copyright (c)  2014- 2014  Guangdong OPPO Mobile Telecommunications Corp., Ltd
-* VENDOR_EDIT
+* CONFIG_MACH_OPPO
 * Description: Source file for CBufferList.
 *           To allocate and free memory block safely.
 * Version   : 0.0
@@ -39,7 +39,7 @@ OPPO_BMS_EXT	int opchg_get_prop_fast_normal_to_warm(struct opchg_charger *chip);
 OPPO_BMS_EXT	int opchg_get_fast_chg_ing(struct opchg_charger *chip);
 OPPO_BMS_EXT	int opchg_set_fast_normal_to_warm_false(struct opchg_charger *chip);
 OPPO_BMS_EXT	int opchg_set_fast_switch_to_normal_false(struct opchg_charger *chip);
-OPPO_BMS_EXT	int opchg_get_fast_normal_to_warm(struct opchg_charger *chip);	
+OPPO_BMS_EXT	int opchg_get_fast_normal_to_warm(struct opchg_charger *chip);
 OPPO_BMS_EXT	int opchg_get_prop_authenticate(struct opchg_charger *chip);
 OPPO_BMS_EXT	int opchg_get_prop_batt_capacity(struct opchg_charger *chip);
 OPPO_BMS_EXT	int opchg_get_prop_current_now(struct opchg_charger *chip);

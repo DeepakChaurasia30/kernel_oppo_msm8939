@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Copyright (c)  2014- 2014  Guangdong OPPO Mobile Telecommunications Corp., Ltd
-* VENDOR_EDIT
+* CONFIG_MACH_OPPO
 * Description: Source file for CBufferList.
 *           To allocate and free memory block safely.
 * Version   : 0.0
@@ -314,30 +314,30 @@ enum {
 
 #define REG14_SMB1357_CHG_ENABLE_SOURCE_MASK                    BIT(7)
 #define REG14_SMB1357_CHG_ENABLE_FOR_COMMAND_REGISTER           0x00
-#define REG14_SMB1357_CHG_ENABLE_FOR_ENABLE_PIN                 BIT(7) 
+#define REG14_SMB1357_CHG_ENABLE_FOR_ENABLE_PIN                 BIT(7)
 
 #define REG14_SMB1357_CHG_ENABLE_POLARITY_MASK                  BIT(6)
 #define REG14_SMB1357_CHG_ENABLE_FOR_ACTIVE_HIGH                0x00
-#define REG14_SMB1357_CHG_ENABLE_FOR_ACTIVE_LOW                 BIT(6) 
+#define REG14_SMB1357_CHG_ENABLE_FOR_ACTIVE_LOW                 BIT(6)
 
 #define REG14_SMB1357_PRE_TO_FAST_CHARGING_MODE_MASK            BIT(5)
 #define REG14_SMB1357_PRE_TO_FAST_CHARGING_FOR_AUTO             0x00
-#define REG14_SMB1357_PRE_TO_FAST_CHARGING_FOR_COMMAND          BIT(5) 
+#define REG14_SMB1357_PRE_TO_FAST_CHARGING_FOR_COMMAND          BIT(5)
 
 #define REG14_SMB1357_CURRENT_TERMINATION_MASK                  BIT(3)
 #define REG14_SMB1357_CURRENT_TERMINATION_ENABLE                0x00
-#define REG14_SMB1357_CURRENT_TERMINATION_DISABLE               BIT(3) 
+#define REG14_SMB1357_CURRENT_TERMINATION_DISABLE               BIT(3)
 
 #define REG14_SMB1357_AUTO_RECHARGE_MASK                        BIT(2)
 #define REG14_SMB1357_AUTO_RECHARGE_ENABLE                      0x00
-#define REG14_SMB1357_AUTO_RECHARGE_DISABLE                     BIT(2) 
+#define REG14_SMB1357_AUTO_RECHARGE_DISABLE                     BIT(2)
 
 #define REG14_SMB1357_HOLD_OFF_CHARGING_TIME_MASK               BIT(1)
 #define REG14_SMB1357_HOLD_OFF_CHARGING_FOR_700US               0x00
-#define REG14_SMB1357_HOLD_OFF_CHARGING_FOR_350MS               BIT(1) 
+#define REG14_SMB1357_HOLD_OFF_CHARGING_FOR_350MS               BIT(1)
 
-#define REG14_SMB1357_CHARGER_INHIBIT_MASK                      BIT(0)	
-#define REG14_SMB1357_CHARGER_INHIBIT_ENABLE                    BIT(0) 	
+#define REG14_SMB1357_CHARGER_INHIBIT_MASK                      BIT(0)
+#define REG14_SMB1357_CHARGER_INHIBIT_ENABLE                    BIT(0)
 #define REG14_SMB1357_CHARGER_INHIBIT_DISABLE                   0x00
 
 
@@ -650,13 +650,13 @@ enum {
 #define REG56_SMB1357_IRQ_G_CHARGE_INHIBIT_STATUS				BIT(0)
 
 
-#define IRQ_A_REG_SMB1357   	                                REG50_SMB1357_ADDRESS	
-#define IRQ_B_REG_SMB1357   	                                REG51_SMB1357_ADDRESS	
-#define IRQ_C_REG_SMB1357   	                                REG52_SMB1357_ADDRESS	
-#define IRQ_D_REG_SMB1357   	                                REG53_SMB1357_ADDRESS	
-#define IRQ_E_REG_SMB1357   	                                REG54_SMB1357_ADDRESS	
-#define IRQ_F_REG_SMB1357   	                                REG55_SMB1357_ADDRESS	
-#define IRQ_G_REG_SMB1357   	                                REG56_SMB1357_ADDRESS	
+#define IRQ_A_REG_SMB1357   	                                REG50_SMB1357_ADDRESS
+#define IRQ_B_REG_SMB1357   	                                REG51_SMB1357_ADDRESS
+#define IRQ_C_REG_SMB1357   	                                REG52_SMB1357_ADDRESS
+#define IRQ_D_REG_SMB1357   	                                REG53_SMB1357_ADDRESS
+#define IRQ_E_REG_SMB1357   	                                REG54_SMB1357_ADDRESS
+#define IRQ_F_REG_SMB1357   	                                REG55_SMB1357_ADDRESS
+#define IRQ_G_REG_SMB1357   	                                REG56_SMB1357_ADDRESS
 
 
 // config register

@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Copyright (c)  2014- 2014  Guangdong OPPO Mobile Telecommunications Corp., Ltd
-* VENDOR_EDIT
+* CONFIG_MACH_OPPO
 * Description: Source file for CBufferList.
 *           To allocate and free memory block safely.
 * Version   : 0.0
@@ -13,8 +13,7 @@
 *******************************************************************************/
 
 #define OPPO_CHARGER_PAR
-#include <oppo_inc.h>
-//huqiao modified for 15085 2015-07-15 
+#include "oppo_inc.h"
 
 bool is_gt1x_tp_charger =false;
 
@@ -99,26 +98,26 @@ int opchg_check_i2c_status(struct opchg_charger *chip)
 {
     int rc=0;
 	u8 reg = 0;
-	
+
 	if(opchg_chip == NULL)
 	{
 		return rc;
 	}
-	
+
 	switch (opchg_chip->driver_id) {
     case OPCHG_SMB358_ID:
         rc = opchg_read_reg(chip, INPUT_CURRENT_LIMIT_REG, &reg);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		rc=0;
 		//rc = opchg_read_reg(chip, REG00_SMB1357_ADDRESS, &reg);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		rc = opchg_read_reg(chip, REG00_BQ24196_ADDRESS, &reg);
 		break;
-		
+
     default:
         break;
     }
@@ -135,21 +134,21 @@ int opchg_set_otg_enable(void)
 	{
 		return rc;
 	}
-	
+
     if (opchg_chip->suspending) {
 		return rc;
 	}
-	
+
 	switch (opchg_chip->driver_id) {
     case OPCHG_SMB358_ID:
         rc = smb358_set_otg_enable();
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		rc=0;
 		//rc = smb1357_set_otg_regulator_enable(rdev);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		rc = bq24196_set_otg_enable();
 		break;
@@ -157,11 +156,11 @@ int opchg_set_otg_enable(void)
 	case OPCHG_BQ24157_ID:
 		rc = bq24157_set_otg_enable();
 		break;
-		
+
 	case OPCHG_BQ24188_ID:
 		rc = bq24188_set_otg_enable();
 		break;
-		
+
     default:
         break;
     }
@@ -172,26 +171,26 @@ int opchg_set_otg_enable(void)
 int opchg_set_otg_disable(void)
 {
     int rc = 0;
-	
+
     if(opchg_chip == NULL)
 	{
 		return rc;
-	}    
+	}
 
 	if (opchg_chip->suspending) {
 		return rc;
 	}
-	
+
 	switch (opchg_chip->driver_id) {
     case OPCHG_SMB358_ID:
         rc = smb358_set_otg_disable();
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		rc=0;
 		//rc = smb1357_set_otg_regulator_disable(rdev);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		rc = bq24196_set_otg_disable();
 		break;
@@ -199,11 +198,11 @@ int opchg_set_otg_disable(void)
 	case OPCHG_BQ24157_ID:
 		rc = bq24157_set_otg_disable();
 		break;
-	
+
 	case OPCHG_BQ24188_ID:
 		rc = bq24188_set_otg_disable();
 		break;
-			
+
     default:
         break;
     }
@@ -223,29 +222,29 @@ int opchg_get_otg_enable(void)
 	if (opchg_chip->suspending) {
 		return rc;
 	}
-	
+
 	switch (opchg_chip->driver_id) {
     case OPCHG_SMB358_ID:
         rc = smb358_get_otg_enable();
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		rc=0;
 		//rc = smb1357_get_otg_enable();
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		rc = bq24196_get_otg_enable();
 		break;
-		
+
 	case OPCHG_BQ24157_ID:
 		rc = bq24157_get_otg_enable();
-		break;	
-	
+		break;
+
 	case OPCHG_BQ24188_ID:
 		rc = bq24188_get_otg_enable();
 		break;
-		
+
     default:
         break;
     }
@@ -261,28 +260,28 @@ int opchg_set_otg_regulator_enable(struct regulator_dev *rdev)
     if (opchg_chip->suspending) {
 		return rc;
 	}
-	
+
 	switch (opchg_chip->driver_id) {
     case OPCHG_SMB358_ID:
         rc = smb358_set_otg_regulator_enable(rdev);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		rc=0;
 		//rc = smb1357_set_otg_regulator_enable(rdev);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		rc = bq24196_set_otg_regulator_enable(rdev);
 		break;
 	case OPCHG_BQ24157_ID:
 		rc = bq24157_set_otg_regulator_enable(rdev);
-		break;	
-	
+		break;
+
 	case OPCHG_BQ24188_ID:
 		rc = bq24188_set_otg_regulator_enable(rdev);
 		break;
-		
+
     default:
         break;
     }
@@ -297,17 +296,17 @@ int opchg_set_otg_regulator_disable(struct regulator_dev *rdev)
     if (opchg_chip->suspending) {
 		return rc;
 	}
-	
+
 	switch (opchg_chip->driver_id) {
     case OPCHG_SMB358_ID:
         rc = smb358_set_otg_regulator_disable(rdev);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		rc=0;
 		//rc = smb1357_set_otg_regulator_disable(rdev);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		rc = bq24196_set_otg_regulator_disable(rdev);
 		break;
@@ -315,11 +314,11 @@ int opchg_set_otg_regulator_disable(struct regulator_dev *rdev)
 	case OPCHG_BQ24157_ID:
 		rc = bq24157_set_otg_regulator_disable(rdev);
 		break;
-	
+
 	case OPCHG_BQ24188_ID:
 		rc = bq24188_set_otg_regulator_disable(rdev);
 		break;
-			
+
     default:
         break;
     }
@@ -334,17 +333,17 @@ int opchg_get_otg_regulator_is_enable(struct regulator_dev *rdev)
     if (opchg_chip->suspending) {
 		return rc;
 	}
-	
+
 	switch (opchg_chip->driver_id) {
     case OPCHG_SMB358_ID:
         rc = smb358_get_otg_regulator_is_enable(rdev);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		rc=0;
 		//rc = smb1357_get_otg_regulator_is_enable(rdev);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		rc = bq24196_get_otg_regulator_is_enable(rdev);
 		break;
@@ -352,11 +351,11 @@ int opchg_get_otg_regulator_is_enable(struct regulator_dev *rdev)
 	case OPCHG_BQ24157_ID:
 		rc = bq24157_get_otg_regulator_is_enable(rdev);
 		break;
-	
+
 	case OPCHG_BQ24188_ID:
 		rc = bq24188_get_otg_regulator_is_enable(rdev);
 		break;
-			
+
     default:
         break;
     }
@@ -401,13 +400,13 @@ int opchg_regulator_init(struct opchg_charger *chip)
 		#if 1
 		chip->otg_vreg.rdev = regulator_register(&chip->otg_vreg.rdesc, &cfg);
 		dev_err(chip->dev, "oppo_debug OTG set vbus \n");
-		#else	
+		#else
 		chip->otg_vreg.rdev = regulator_register(
 						    &chip->otg_vreg.rdesc, cfg.dev,
 						    cfg.init_data, cfg.driver_data,
 						    cfg.of_node);
 		#endif
-		
+
 		if (IS_ERR(chip->otg_vreg.rdev)) {
 			rc = PTR_ERR(chip->otg_vreg.rdev);
 			chip->otg_vreg.rdev = NULL;
@@ -427,20 +426,20 @@ void opchg_get_prop_fastcharger_type(struct opchg_charger *chip)
     if (chip->suspending) {
 		return;
 	}
-	
+
 	switch (chip->driver_id) {
     case OPCHG_SMB358_ID:
         //
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		rc = smb1357_get_prop_fastcharger_type(chip);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		//
 		break;
-		
+
     default:
         break;
     }
@@ -456,16 +455,16 @@ void opchg_get_prop_charge_type(struct opchg_charger *chip)
     if (chip->suspending) {
 		return;
 	}
-	
+
 	switch (chip->driver_id) {
     case OPCHG_SMB358_ID:
         rc = smb358_get_prop_charge_type(chip);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		rc = smb1357_get_prop_charge_type(chip);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		rc = bq24196_get_prop_charge_type(chip);
 		break;
@@ -473,11 +472,11 @@ void opchg_get_prop_charge_type(struct opchg_charger *chip)
 	case OPCHG_BQ24157_ID:
 		rc = bq24157_get_prop_charge_type(chip);
 		break;
-	
+
 	case OPCHG_BQ24188_ID:
 		rc = bq24188_get_prop_charge_type(chip);
 		break;
-			
+
     default:
         break;
     }
@@ -492,16 +491,16 @@ void opchg_get_charging_status(struct opchg_charger *chip)
     if (chip->suspending) {
 		return;
 	}
-	
+
 	switch (chip->driver_id) {
     case OPCHG_SMB358_ID:
         rc = smb358_get_charging_status(chip);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		rc = smb1357_get_charging_status(chip);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		rc = bq24196_get_charging_status(chip);
 		break;
@@ -509,11 +508,11 @@ void opchg_get_charging_status(struct opchg_charger *chip)
 	case OPCHG_BQ24157_ID:
 		rc = bq24157_get_charging_status(chip);
 		break;
-	
+
 	case OPCHG_BQ24188_ID:
 		rc = bq24188_get_charging_status(chip);
 		break;
-			
+
     default:
         break;
     }
@@ -526,8 +525,8 @@ int opchg_get_prop_batt_status(struct opchg_charger *chip)
     if (chip->suspending)
 		return POWER_SUPPLY_STATUS_UNKNOWN;
 
-	if(chip->batt_full){	
-		if((chip->batt_authen) && 
+	if(chip->batt_full){
+		if((chip->batt_authen) &&
 			((chip->charging_opchg_temp_statu >= OPCHG_CHG_TEMP_PRE_COOL1)&&(chip->charging_opchg_temp_statu  <= OPCHG_CHG_TEMP_NORMAL)))
 		{
 			if(chip->bat_volt_check_point >= 100)
@@ -542,16 +541,16 @@ int opchg_get_prop_batt_status(struct opchg_charger *chip)
         chip->bat_status = POWER_SUPPLY_STATUS_CHARGING;
         return chip->bat_status;
 	}
-    
+
     switch (chip->driver_id) {
     case OPCHG_SMB358_ID:
         chip->bat_status = smb358_get_prop_batt_status(chip);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		chip->bat_status = smb1357_get_prop_batt_status(chip);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		chip->bat_status = bq24196_get_prop_batt_status(chip);
 		break;
@@ -559,18 +558,17 @@ int opchg_get_prop_batt_status(struct opchg_charger *chip)
 	case OPCHG_BQ24157_ID:
 		chip->bat_status = bq24157_get_prop_batt_status(chip);
 		break;
-	
+
 	case OPCHG_BQ24188_ID:
 		chip->bat_status = bq24188_get_prop_batt_status(chip);
 		break;
-			
+
     default:
         break;
     }
 
 #ifdef OPPO_USE_FAST_CHARGER
-	if( is_project(OPPO_14005)||is_project(OPPO_14023)||is_project(OPPO_15011)||
-		is_project(OPPO_15018)||is_project(OPPO_15022)||is_project(OPPO_15043))
+	if(is_project(OPPO_14005) || is_project(OPPO_15011) || is_project(OPPO_15018) || is_project(OPPO_15022))
 	{
 		if(opchg_get_prop_fast_chg_started(chip) == true)
 			chip->bat_status = POWER_SUPPLY_STATUS_CHARGING;
@@ -586,11 +584,11 @@ void opchg_set_enable_volatile_writes(struct opchg_charger *chip)
     case OPCHG_SMB358_ID:
         smb358_set_enable_volatile_writes(chip);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		smb1357_set_enable_volatile_writes(chip);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		bq24196_set_enable_volatile_writes(chip);
 		break;
@@ -598,11 +596,11 @@ void opchg_set_enable_volatile_writes(struct opchg_charger *chip)
 	case OPCHG_BQ24157_ID:
 		//
 		break;
-	
+
 	case OPCHG_BQ24188_ID:
 		bq24188_set_enable_volatile_writes(chip);
 		break;
-			
+
     default:
         break;
     }
@@ -614,18 +612,18 @@ void opchg_set_complete_charge_timeout(struct opchg_charger *chip, int val)
     case OPCHG_SMB358_ID:
         smb358_set_complete_charge_timeout(chip, val);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		smb1357_set_complete_charge_timeout(chip, val);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		bq24196_set_complete_charge_timeout(chip, val);
 		break;
 	case OPCHG_BQ24188_ID:
 		bq24188_set_complete_charge_timeout(chip, val);
 		break;
-		
+
     default:
         break;
     }
@@ -637,11 +635,11 @@ void opchg_set_reset_charger(struct opchg_charger *chip, bool reset)
     case OPCHG_SMB358_ID:
         //smb358_set_reset_charger(chip, reset);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		//smb1357_set_reset_charger(chip, reset);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		bq24196_set_reset_charger(chip, reset);
 		break;
@@ -653,7 +651,7 @@ void opchg_set_reset_charger(struct opchg_charger *chip, bool reset)
 	case OPCHG_BQ24188_ID:
 		bq24188_set_reset_charger(chip, reset);
 		break;
-		
+
     default:
         break;
     }
@@ -661,65 +659,65 @@ void opchg_set_reset_charger(struct opchg_charger *chip, bool reset)
 
 void opchg_set_precharger_voltage(struct opchg_charger *chip)
 {
-	int rc = 0; 
+	int rc = 0;
 
 	switch (chip->driver_id) {
 	case OPCHG_SMB358_ID:
 		rc = smb358_set_precharger_voltage(chip);
 		break;
-		
+
 	case OPCHG_SMB1357_ID:
 		//smb1357_set_reset_charger(chip, reset);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		rc = bq24196_set_precharger_voltage(chip);
 		break;
-		
+
 	default:
 		break;
 	}
 }
-	
+
 
 void opchg_set_recharger_voltage(struct opchg_charger *chip)
 {
-	int rc = 0; 
+	int rc = 0;
 
     switch (chip->driver_id) {
     case OPCHG_SMB358_ID:
         //rc = smb358_set_recharger_voltage(chip);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		//smb1357_set_reset_charger(chip, reset);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		rc = bq24196_set_recharger_voltage(chip);
 		break;
-		
+
     default:
         break;
     }
 }
 void opchg_set_prechg_current(struct opchg_charger *chip, int ipre_mA)
 {
-	int rc = 0; 
+	int rc = 0;
 
 	switch (chip->driver_id) {
 	case OPCHG_SMB358_ID:
 		rc = smb358_set_prechg_current(chip,ipre_mA);
 		break;
-		
+
 	case OPCHG_SMB1357_ID:
 		//smb1357_set_reset_charger(chip, reset);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		rc = bq24196_set_prechg_current(chip,ipre_mA);
 		break;
-		
+
 	default:
 		break;
 	}
@@ -732,11 +730,11 @@ void opchg_set_input_chg_current(struct opchg_charger *chip, int mA, bool aicl)
     case OPCHG_SMB358_ID:
         smb358_set_input_chg_current(chip, mA, aicl);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		smb1357_set_input_chg_current(chip, mA, aicl);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		bq24196_set_input_chg_current(chip, mA, aicl);
 		break;
@@ -744,11 +742,11 @@ void opchg_set_input_chg_current(struct opchg_charger *chip, int mA, bool aicl)
 	case OPCHG_BQ24157_ID:
 		bq24157_set_input_chg_current(chip, mA, aicl);
 		break;
-	
+
 	case OPCHG_BQ24188_ID:
 		bq24188_set_input_chg_current(chip, mA, aicl);
 		break;
-			
+
     default:
         break;
     }
@@ -760,11 +758,11 @@ void opchg_set_fast_chg_current(struct opchg_charger *chip, int mA)
     case OPCHG_SMB358_ID:
         smb358_set_fastchg_current(chip, mA);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		smb1357_set_fastchg_current(chip, mA);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		bq24196_set_fastchg_current(chip, mA);
 		break;
@@ -772,11 +770,11 @@ void opchg_set_fast_chg_current(struct opchg_charger *chip, int mA)
 	case OPCHG_BQ24157_ID:
 		bq24157_set_fastchg_current(chip, mA);
 		break;
-	
+
 	case OPCHG_BQ24188_ID:
 		bq24188_set_fastchg_current(chip, mA);
 		break;
-			
+
     default:
         break;
     }
@@ -788,11 +786,11 @@ void opchg_set_float_voltage(struct opchg_charger *chip, int mV)
     case OPCHG_SMB358_ID:
         smb358_set_float_voltage(chip, mV);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		smb1357_set_float_voltage(chip, mV);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		bq24196_set_float_voltage(chip, mV);
 		break;
@@ -800,11 +798,11 @@ void opchg_set_float_voltage(struct opchg_charger *chip, int mV)
 	case OPCHG_BQ24157_ID:
 		bq24157_set_float_voltage(chip, mV);
 		break;
-	
+
 	case OPCHG_BQ24188_ID:
 		bq24188_set_float_voltage(chip, mV);
 		break;
-		
+
     default:
         break;
     }
@@ -814,13 +812,13 @@ void opchg_set_vindpm_vol(struct opchg_charger *chip, int mV)
 {
     switch (chip->driver_id) {
     case OPCHG_SMB358_ID:
-       	//
+	//
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		//
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		bq24196_set_vindpm_vol(chip, mV);
 		break;
@@ -832,7 +830,7 @@ void opchg_set_vindpm_vol(struct opchg_charger *chip, int mV)
 	case OPCHG_BQ24188_ID:
 		bq24188_set_vindpm_vol(chip, mV);
 		break;
-		
+
     default:
         break;
     }
@@ -844,13 +842,13 @@ void opchg_set_charging_disable(struct opchg_charger *chip, bool disable)
     case OPCHG_SMB358_ID:
         smb358_set_charging_disable(chip, disable);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		smb1357_set_charging_disable(chip, disable);
 		//opchg_read_reg(chip, REG42_SMB1357_ADDRESS, &reg);
 		//pr_err("oppo charging reg42= %d\n", reg);
-	 	break;
-	 	
+		break;
+
 	case OPCHG_BQ24196_ID:
 		bq24196_set_charging_disable(chip, disable);
 		break;
@@ -858,11 +856,11 @@ void opchg_set_charging_disable(struct opchg_charger *chip, bool disable)
 	case OPCHG_BQ24157_ID:
 		bq24157_set_charging_disable(chip, disable);
 		break;
-	
+
 	case OPCHG_BQ24188_ID:
 		bq24188_set_charging_disable(chip, disable);
 		break;
-				
+
     default:
         break;
     }
@@ -874,11 +872,11 @@ void opchg_set_suspend_enable(struct opchg_charger *chip, bool enable)
     case OPCHG_SMB358_ID:
         smb358_set_suspend_enable(chip, enable);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		smb1357_set_suspend_enable(chip, enable);
 		break;
-		
+
     case OPCHG_BQ24196_ID:
         bq24196_set_suspend_enable(chip, enable);
         break;
@@ -886,11 +884,11 @@ void opchg_set_suspend_enable(struct opchg_charger *chip, bool enable)
 	case OPCHG_BQ24157_ID:
         bq24157_set_suspend_enable(chip, enable);
         break;
-	
+
 	case OPCHG_BQ24188_ID:
         bq24188_set_suspend_enable(chip, enable);
         break;
-			
+
     default:
         break;
     }
@@ -899,16 +897,16 @@ void opchg_set_suspend_enable(struct opchg_charger *chip, bool enable)
 int opchg_hw_init(struct opchg_charger *chip)
 {
     int rc = 0;
-    
+
     switch (chip->driver_id) {
     case OPCHG_SMB358_ID:
         rc = smb358_hw_init(chip);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		rc = smb1357_hw_init(chip);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		rc = bq24196_hw_init(chip);
 		break;
@@ -920,7 +918,7 @@ int opchg_hw_init(struct opchg_charger *chip)
 	case OPCHG_BQ24188_ID:
 		rc = bq24188_hw_init(chip);
 		break;
-		
+
     default:
         break;
     }
@@ -931,33 +929,30 @@ int opchg_hw_init(struct opchg_charger *chip)
 int opchg_get_initial_state(struct opchg_charger *chip)
 {
     int rc = 0;
-    
+
     switch (chip->driver_id) {
     case OPCHG_SMB358_ID:
         rc = smb358_get_initial_state(chip);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		rc = smb1357_get_initial_state(chip);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
-		if ((is_project(OPPO_15029) && get_PCB_Version() == HW_VERSION__10)||
-			(is_project(OPPO_15109) && (get_PCB_Version() == HW_VERSION__10||get_PCB_Version() == HW_VERSION__12))||is_project(OPPO_15399))
+		if (((is_project(OPPO_15109) && (get_PCB_Version() == HW_VERSION__10||get_PCB_Version() == HW_VERSION__12||get_PCB_Version() == HW_VERSION__14||get_PCB_Version() == HW_VERSION__15)))||is_project(OPPO_15399))
 		{
 			rc = bq24196_get_initial_state(chip);
 		}
 		break;
-		
+
 	case OPCHG_BQ24188_ID:
 		rc = bq24188_get_initial_state(chip);
-		break;	
+		break;
 
 	case OPCHG_BQ24157_ID:
-		if(is_project(OPPO_15025) && get_PCB_Version() <= 1)
-			rc = bq24157_get_initial_state(chip);
 		break;
-			
+
     default:
         break;
     }
@@ -972,19 +967,19 @@ void opchg_set_wdt_reset(struct opchg_charger *chip)
     case OPCHG_SMB358_ID:
         //do nothing
         break;
-        
+
     case OPCHG_SMB1357_ID:
         //do nothing
         break;
-        
+
     case OPCHG_BQ24196_ID:
         bq24196_set_wdt_reset(chip);
         break;
-        
+
 	case OPCHG_BQ24188_ID:
         bq24188_set_wdt_reset(chip);
         break;
-		
+
     default:
         break;
     }
@@ -996,11 +991,11 @@ void opchg_set_wdt_timer(struct opchg_charger *chip, bool enable)
     case OPCHG_SMB358_ID:
         //do nothing
         break;
-        
+
     case OPCHG_SMB1357_ID:
         //do nothing
         break;
-        
+
     case OPCHG_BQ24196_ID:
 		bq24196_set_wdt_timer(chip,enable);
         break;
@@ -1008,7 +1003,7 @@ void opchg_set_wdt_timer(struct opchg_charger *chip, bool enable)
 	case OPCHG_BQ24188_ID:
 		bq24188_set_wdt_timer(chip,enable);
         break;
-		
+
     default:
         break;
     }
@@ -1016,16 +1011,16 @@ void opchg_set_wdt_timer(struct opchg_charger *chip, bool enable)
 int opchg_check_charging_pre_full(struct opchg_charger *chip)
 {
     int rc = 0;
-    
+
     switch (chip->driver_id) {
     case OPCHG_SMB358_ID:
         //do nothing
         break;
-        
+
     case OPCHG_SMB1357_ID:
         //do nothing
         break;
-        
+
     case OPCHG_BQ24196_ID:
         bq24196_check_charging_pre_full(chip);
         break;
@@ -1033,11 +1028,11 @@ int opchg_check_charging_pre_full(struct opchg_charger *chip)
 	case OPCHG_BQ24157_ID:
         bq24157_check_charging_pre_full(chip);
         break;
-	
+
 	case OPCHG_BQ24188_ID:
         bq24188_check_charging_pre_full(chip);
         break;
-		
+
     default:
         break;
     }
@@ -1048,16 +1043,16 @@ int opchg_check_charging_pre_full(struct opchg_charger *chip)
 int opchg_check_battovp(struct opchg_charger *chip)
 {
     int rc = 0;
-    
+
     switch (chip->driver_id) {
     case OPCHG_SMB358_ID:
         //do nothing
         break;
-        
+
     case OPCHG_SMB1357_ID:
         //do nothing
         break;
-        
+
     case OPCHG_BQ24196_ID:
         rc = bq24196_check_battovp(chip);
         break;
@@ -1065,11 +1060,11 @@ int opchg_check_battovp(struct opchg_charger *chip)
 	case OPCHG_BQ24157_ID:
         rc = bq24157_check_battovp(chip);
         break;
-		
+
 	case OPCHG_BQ24188_ID:
         rc = bq24188_check_battovp(chip);
         break;
-	
+
     default:
         break;
     }
@@ -1080,16 +1075,16 @@ int opchg_check_battovp(struct opchg_charger *chip)
 int opchg_check_chargerovp(struct opchg_charger *chip)
 {
     int rc = 0;
-    
+
     switch (chip->driver_id) {
     case OPCHG_SMB358_ID:
         //do nothing
         break;
-        
+
     case OPCHG_SMB1357_ID:
         //do nothing
         break;
-        
+
     case OPCHG_BQ24196_ID:
         //rc = bq24196_check_chargerovp(chip);
         break;
@@ -1097,11 +1092,11 @@ int opchg_check_chargerovp(struct opchg_charger *chip)
 	case OPCHG_BQ24157_ID:
         //rc = bq24157_check_chargerovp(chip);
         break;
-		
+
 	case OPCHG_BQ24188_ID:
         rc = bq24188_check_chargerovp(chip);
         break;
-	
+
     default:
         break;
     }
@@ -1113,23 +1108,19 @@ int opchg_check_chargerovp(struct opchg_charger *chip)
 irqreturn_t opchg_chg_irq_handler(int irq, void *dev_id)
 {
     struct opchg_charger *chip = dev_id;
-    
+
     switch (chip->driver_id) {
     case OPCHG_SMB358_ID:
         smb358_chg_irq_handler(irq, chip);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		smb1357_chg_irq_handler(irq, chip);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
-		if (is_project(OPPO_15029) && get_PCB_Version() == HW_VERSION__10) {
-			//pr_err("===%s: preject is 15029, return===\n",__func__);
-			bq24196_chg_irq_handler(irq, chip);
-		}
 		break;
-		
+
     default:
         break;
     }
@@ -1139,7 +1130,6 @@ irqreturn_t opchg_chg_irq_handler(int irq, void *dev_id)
 
 void opchg_usbin_valid_irq_handler(bool usb_present)
 {
-	//huqiao modified for 15085 2015-07-15
 	is_gt1x_tp_charger =usb_present;
 	if(!opchg_chip){
 		pr_err("%s opchg_chip is NULL,return\n",__func__);
@@ -1149,7 +1139,7 @@ void opchg_usbin_valid_irq_handler(bool usb_present)
 	{
 		pr_err("%s opchg_chip->driver_id=%d,opchg_chip->chg_present=%d,usb_present=%d\n",__func__,opchg_chip->driver_id,opchg_chip->chg_present,usb_present);
 	}
-		
+
 	if(opchg_get_prop_fast_chg_started(opchg_chip) == true){
 		pr_err("%s fast chg started,return\n",__func__);
 		return ;
@@ -1164,34 +1154,33 @@ void opchg_usbin_valid_irq_handler(bool usb_present)
 #endif
 
 	//add for mmi test,when charger is out status,set factory mode test charging
-  	if((opchg_chip->chg_present == false) && (usb_present == 1))
-  	{
+	if((opchg_chip->chg_present == false) && (usb_present == 1))
+	{
 		//add for factory mode test charging for 20150325
 		opchg_chip->is_factory_mode	= 1;
-  	}
-	
+	}
+
     switch (opchg_chip->driver_id) {
     case OPCHG_SMB358_ID:
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		if(usb_present == 1)
 		{
-			 // when  opchg_chip->chg_present is not Initialization and charger is out status,then Response charger_in Interrupt 
+			 // when  opchg_chip->chg_present is not Initialization and charger is out status,then Response charger_in Interrupt
 			if(opchg_chip->chg_present != true)
 			{
 				opchg_chip->chg_present = usb_present;
 				bq24196_usbin_valid_irq_handler(opchg_chip);
-			}	
+			}
 		}
 		else
 		{
 			// if in fast_charging ,and not response charger out
-			if( is_project(OPPO_14005)||is_project(OPPO_14023)||is_project(OPPO_15011)|| 
-				is_project(OPPO_15018)||is_project(OPPO_15022)||is_project(OPPO_15043)) {
+			if(is_project(OPPO_14005) || is_project(OPPO_15011) || is_project(OPPO_15018) || is_project(OPPO_15022)) {
 				if(opchg_get_prop_fast_chg_started(opchg_chip) == false){
 					opchg_chip->chg_present = usb_present;
 					bq24196_usbin_valid_irq_handler(opchg_chip);
@@ -1202,17 +1191,17 @@ void opchg_usbin_valid_irq_handler(bool usb_present)
 			}
 		}
 		break;
-	
+
 	case OPCHG_BQ24157_ID:
 		opchg_chip->chg_present = usb_present;
 		bq24157_usbin_valid_irq_handler(opchg_chip);
 		break;
-		
+
 	case OPCHG_BQ24188_ID:
 		opchg_chip->chg_present = usb_present;
 		bq24188_usbin_valid_irq_handler(opchg_chip);
-		break;	
-			
+		break;
+
     default:
         break;
     }
@@ -1221,15 +1210,15 @@ void opchg_usbin_valid_irq_handler(bool usb_present)
 
 void opchg_dump_regs(struct opchg_charger *chip)
 {
-    switch (chip->driver_id) {	
+    switch (chip->driver_id) {
     case OPCHG_SMB358_ID:
         smb358_dump_regs(chip);
         break;
-        
+
 	case OPCHG_SMB1357_ID:
 		smb1357_dump_regs(chip);
 		break;
-		
+
 	case OPCHG_BQ24196_ID:
 		bq24196_dump_regs(chip);
 		break;
@@ -1237,11 +1226,11 @@ void opchg_dump_regs(struct opchg_charger *chip)
 	case OPCHG_BQ24157_ID:
 		bq24157_dump_regs(chip);
 		break;
-	
+
 	case OPCHG_BQ24188_ID:
 		bq24188_dump_regs(chip);
 		break;
-			
+
     default:
         break;
     }
@@ -1250,9 +1239,7 @@ void opchg_dump_regs(struct opchg_charger *chip)
 void opchg_switch_to_usbin(struct opchg_charger *chip,bool enable)
 {
 	int rc=0;
-	
-	if((get_boot_mode() == MSM_BOOT_MODE__RF) || (get_boot_mode() == MSM_BOOT_MODE__WLAN))
-		enable = 0;
+
 	if(chip != NULL)
 	{
 		if(chip->usbin_switch_gpio > 0)
@@ -1266,10 +1253,9 @@ void opchg_switch_to_usbin(struct opchg_charger *chip,bool enable)
 int qpnp_charger_type_get(struct opchg_charger *chip)
 {
 	union power_supply_propval ret = {0,};
-		
+
 	chip->usb_psy->get_property(chip->usb_psy,
 				  POWER_SUPPLY_PROP_TYPE, &ret);
 
 	return ret.intval;
 }
-

@@ -46,7 +46,7 @@ static ssize_t power_supply_show_property(struct device *dev,
 	static char *type_text[] = {
 		"Unknown", "Battery", "UPS", "Mains", "USB", "USB_DCP",
 		"USB_CDP", "USB_ACA",
-		"USB_HVDCP", "USB_HVDCP3", "Wireless", "BMS", "USB_Parallel", "BCL"
+		"USB_HVDCP", "USB_HVDCP3", "Wireless", "BMS", "USB_Parallel"
 	};
 	static char *status_text[] = {
 		"Unknown", "Charging", "Discharging", "Not charging", "Full"
@@ -68,10 +68,6 @@ static ssize_t power_supply_show_property(struct device *dev,
 	};
 	static char *scope_text[] = {
 		"Unknown", "System", "Device"
-	};
-
-	static char *charge_rate[] = {
-		"None", "Normal", "Weak", "Turbo"
 	};
 	ssize_t ret = 0;
 	struct power_supply *psy = dev_get_drvdata(dev);
