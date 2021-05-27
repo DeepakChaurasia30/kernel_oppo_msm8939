@@ -4,8 +4,9 @@ obj-$(CONFIG_OPPO_CHARGER)	+= oppo_bms.o
 obj-$(CONFIG_OPPO_CHARGER)	+= oppo_charger.o
 obj-$(CONFIG_OPPO_CHARGER)	+= oppo_init.o
 obj-$(CONFIG_OPPO_CHARGER)	+= oppo_upper.o
-
 obj-$(CONFIG_OPPO_CHARGER)	+= oppo_smb358.o
+
+
 obj-$(CONFIG_OPPO_CHARGER)	+= oppo_smb1357.o
 obj-$(CONFIG_OPPO_CHARGER)	+= oppo_bq24196.o
 obj-$(CONFIG_OPPO_CHARGER)	+= oppo_bq24157.o
@@ -16,3 +17,5 @@ obj-$(CONFIG_OPPO_CHARGER)	+= oppo_bq2022a.o
 
 obj-$(CONFIG_OPPO_CHARGER)	+= oppo_vooc.o
 obj-$(CONFIG_OPPO_CHARGER)	+= oppo_vooc_stm8s.o
+#Fuchun.Liao@Mobile.BSP.CHG 2015-04-26 move it to qpnp-linear-charger.c
+#obj-$(CONFIG_OPPO_CHARGER)	+= oppo_qpnp_charger.o

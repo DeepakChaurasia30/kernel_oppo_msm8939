@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Copyright (c)  2014- 2014  Guangdong OPPO Mobile Telecommunications Corp., Ltd
-* CONFIG_MACH_OPPO
+* VENDOR_EDIT
 * Description: Source file for CBufferList.
 *           To allocate and free memory block safely.
 * Version   : 0.0
@@ -279,7 +279,7 @@ u8 pre_reg08_val = 0, pre_reg09_val = 0;
 extern u8 reg08_val, reg09_val;
 extern u8 pre_reg08_val, pre_reg09_val;
 #endif
-
+	
 OPPO_BQ24196_EXT int bq24196_get_prop_charge_type(struct opchg_charger *chip);
 OPPO_BQ24196_EXT int bq24196_get_prop_batt_status(struct opchg_charger *chip);
 OPPO_BQ24196_EXT int bq24196_get_charging_status(struct opchg_charger *chip);

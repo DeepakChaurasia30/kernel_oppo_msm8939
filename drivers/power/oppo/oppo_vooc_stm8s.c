@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Copyright (c)  2015- 2016  Guangdong OPPO Mobile Telecommunications Corp., Ltd
-* CONFIG_MACH_OPPO
+* VENDOR_EDIT
 * Description: Source file for CBufferList.
 *           To allocate and free memory block safely.
 * Version   : 0.1
@@ -13,7 +13,7 @@
 *******************************************************************************/
 
 #define OPPO_VOOC_STM8S_PAR
-#include "oppo_inc.h"
+#include <oppo_inc.h>
 
 //static struct task_struct *pic16f_fw_update_task = NULL;
 #define BYTE_OFFSET 			2
@@ -24,7 +24,7 @@
 #if defined CONFIG_OPPO_DEVICE_FIND7 || defined CONFIG_OPPO_DEVICE_FIND7WX	//FIND7/FIND7WX:pic1503
 #define ERASE_COUNT   		96	//0x200-0x7FF usb_uar_control
 #define READ_COUNT			95	//192
-#else
+#else	
 #define ERASE_COUNT   		224	//0x200-0xFFF
 #define READ_COUNT			223	//448
 #endif
@@ -58,14 +58,24 @@ static bool stm8s_fw_check(struct opchg_fast_charger *chip)
 		goto i2c_err;
 	}
 	msleep(10);
-
+	
 	for(i = 0;i < READ_COUNT;i++){	//1508:448,1503:192
 		i2c_smbus_read_i2c_block_data(chip->client,0x03,16,&data_buf[0]);
 		msleep(2);
 		i2c_smbus_read_i2c_block_data(chip->client,0x03,16,&data_buf[16]);
-
+		
 		addr = 0x8800 + i * 32;
-
+/*
+		printk("%s addr = 0x%x,%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x \
+			%x %x %x %x %x %x %x %x %x\n",__func__,addr,
+			data_buf[0],data_buf[1],data_buf[2],data_buf[3],data_buf[4],data_buf[5],data_buf[6],data_buf[7],
+			data_buf[8],data_buf[9],data_buf[10],data_buf[11],data_buf[12],data_buf[13],data_buf[14],
+			data_buf[15],data_buf[16],data_buf[17],data_buf[18],data_buf[19],data_buf[20],data_buf[21],data_buf[22],
+			data_buf[23],data_buf[24],data_buf[25],data_buf[26],data_buf[27],data_buf[28],data_buf[29],data_buf[30],
+			data_buf[31]);
+*/	
+		if (is_project(OPPO_15022))
+		{
 			if(addr == ((vooc_firmware_data[fw_line * 34 + 1] << 8) | vooc_firmware_data[fw_line * 34]))
 			{
 				if(data_buf[0] != vooc_firmware_data[fw_line * 34 + 2]){
@@ -76,7 +86,46 @@ static bool stm8s_fw_check(struct opchg_fast_charger *chip)
 							data_buf[8],data_buf[9],data_buf[10],data_buf[11],data_buf[12],data_buf[13],data_buf[14],
 							data_buf[15],data_buf[16],data_buf[17],data_buf[18],data_buf[19],data_buf[20],data_buf[21],data_buf[22],
 							data_buf[23],data_buf[24],data_buf[25],data_buf[26],data_buf[27],data_buf[28],data_buf[29],data_buf[30],
-							data_buf[31]);
+							data_buf[31]);	
+					return FW_CHECK_FAIL;
+				}
+				fw_line++;
+			}
+			else
+			{
+				if(addr == ((vooc_firmware_data[fw_line * 34 + 1] << 8) | vooc_firmware_data[fw_line * 34]))
+				{
+					for(j = 0;j < 32;j++){
+						if(data_buf[j] != vooc_firmware_data[fw_line * 34 + 2 + j]){
+							pr_err("%s fail,data_buf[%d]:0x%x != vooc_firmware_data[%d]:0x%x\n",__func__,
+								j,data_buf[j],(fw_line * 34 + 2 + j),vooc_firmware_data[fw_line * 34 + 2 + j]);
+
+							return FW_CHECK_FAIL;
+						}
+					}	
+					fw_line++;
+				}
+				else {
+					#if 0
+					pr_err("%s addr dismatch,addr:0x%x,pic_data:0x%x\n",__func__,
+						addr,(vooc_firmware_data[fw_line * 34 + 1] << 8) | vooc_firmware_data[fw_line * 34]);
+					#endif
+				}
+			}
+		} 
+		else
+		{
+			if(addr == ((vooc_firmware_data[fw_line * 34 + 1] << 8) | vooc_firmware_data[fw_line * 34]))
+			{
+				if(data_buf[0] != vooc_firmware_data[fw_line * 34 + 2]){
+					pr_err("%s fail,data_buf[0]:0x%x != vooc_firmware_data[%d]:0x%x\n",__func__,
+							data_buf[0],(fw_line * 34 + 2),vooc_firmware_data[fw_line * 34 + 2]);
+					pr_err("%s addr = 0x%x,%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",__func__,addr,
+							data_buf[0],data_buf[1],data_buf[2],data_buf[3],data_buf[4],data_buf[5],data_buf[6],data_buf[7],
+							data_buf[8],data_buf[9],data_buf[10],data_buf[11],data_buf[12],data_buf[13],data_buf[14],
+							data_buf[15],data_buf[16],data_buf[17],data_buf[18],data_buf[19],data_buf[20],data_buf[21],data_buf[22],
+							data_buf[23],data_buf[24],data_buf[25],data_buf[26],data_buf[27],data_buf[28],data_buf[29],data_buf[30],
+							data_buf[31]);	
 					return FW_CHECK_FAIL;
 				}
 				fw_line++;
@@ -91,19 +140,49 @@ static bool stm8s_fw_check(struct opchg_fast_charger *chip)
 								j,data_buf[j],(fw_line * 34 + 2 + j),vooc_firmware_data[fw_line * 34 + 2 + j]);
 							return FW_CHECK_FAIL;
 						}
-					}
+					}	
 					fw_line++;
-				} else {
+				}
+				else
+				 {
+					#if 0
+					pr_err("%s addr dismatch,addr:0x%x,pic_data:0x%x\n",__func__,
+						addr,(vooc_firmware_data[fw_line * 34 + 1] << 8) | vooc_firmware_data[fw_line * 34]);
+					#endif
 				}
 			}
+		}	
 	}
 	pr_info("%s success\n",__func__);
 	return FW_CHECK_SUCCESS;
-
+	
 i2c_err:
 	pr_err("%s is not success\n",__func__);
 	return FW_CHECK_FAIL;
 }
+
+#if 0
+static void stm8s_fw_data_recover(struct opchg_fast_charger *chip,unsigned char *data_buf,unsigned int offset,unsigned int length)
+{
+	unsigned int count = 0;
+	unsigned char temp;
+	int i;
+	
+	count = offset;
+	while(count < (offset + length))
+	{
+		for(i = 0;i < 2 * BYTES_TO_WRITE;i = (i+2)){
+			temp = data_buf[count+BYTE_OFFSET+i];
+			data_buf[count+BYTE_OFFSET+i] = data_buf[count+BYTE_OFFSET+i+1];
+			data_buf[count+BYTE_OFFSET+i+1] = temp;
+		}
+		count = count + BYTE_OFFSET + 2 * BYTES_TO_WRITE;
+		if(count > (offset + length - 1)){
+			break;
+		}
+	}
+}
+#endif
 
 static int stm8s_fw_write(struct opchg_fast_charger *chip,unsigned char *data_buf,unsigned int offset,unsigned int length)
 {
@@ -127,6 +206,16 @@ static int stm8s_fw_write(struct opchg_fast_charger *chip,unsigned char *data_bu
 			return -1;
 		}
 
+		//byte_count = buf[count];
+		//swap low byte and high byte begin
+		//because LSB is before MSB in buf,but pic16F receive MSB first
+#if 0
+		for(i = 0;i < 2 * BYTES_TO_WRITE;i = (i+2)){
+			temp = data_buf[count+BYTE_OFFSET+i];
+			data_buf[count+BYTE_OFFSET+i] = data_buf[count+BYTE_OFFSET+i+1];
+			data_buf[count+BYTE_OFFSET+i+1] = temp;
+		}
+#endif
 		//swap low byte and high byte end
 		//write 16 bytes data to pic16F
 		i2c_smbus_write_i2c_block_data(chip->client,0x02,BYTES_TO_WRITE,&data_buf[count+BYTE_OFFSET]);
@@ -139,7 +228,7 @@ static int stm8s_fw_write(struct opchg_fast_charger *chip,unsigned char *data_bu
 		i2c_smbus_write_i2c_block_data(chip->client,0x05,1,&zero_buf[0]);
 		i2c_smbus_read_i2c_block_data(chip->client,0x05,1,&temp_buf[0]);
 		//printk("lfc read again 0x05,temp_buf[0]:0x%x\n",temp_buf[0]);
-
+				
 		count = count + BYTE_OFFSET + 2 * BYTES_TO_WRITE;
 
 		msleep(2);
@@ -150,7 +239,7 @@ static int stm8s_fw_write(struct opchg_fast_charger *chip,unsigned char *data_bu
 	}
 	return 0;
 }
-
+	
 int stm8s_fw_update(struct opchg_fast_charger *chip,bool enable)
 {
 	unsigned char zero_buf[1] = {0};
@@ -159,13 +248,18 @@ int stm8s_fw_update(struct opchg_fast_charger *chip,bool enable)
 	int i,rc=0;
 	unsigned int addr = 0x8800;
 	int download_again = 0;
-
+	
 	pr_err("%s is start,erase data ing.......\n",__func__);
 
 	if (enable)
 		opchg_chip->updating_fw_flag = true;
 
 	if(enable){
+		#if 0
+		rc = gpio_tlmm_config(GPIO_CFG(96, 0, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_UP, GPIO_CFG_2MA),GPIO_CFG_ENABLE);
+		gpio_set_value(96,1);
+		#endif
+		//rc = opchg_set_switch_mode(chip,VOOC_CHARGER_MODE);//rc=opchg_fast_charging_pin_enable(chip,1);
 		//rc = opchg_set_switch_mode(VOOC_CHARGER_MODE);
 		if(rc < 0){
 			pr_err("%s pull up switch fail\n",__func__);
@@ -177,7 +271,7 @@ int stm8s_fw_update(struct opchg_fast_charger *chip,bool enable)
 	}
 
 update_fw:
-	//erase address 0x200-0x7FF
+	//erase address 0x200-0x7FF 
 	for(i = 0;i < ERASE_COUNT;i++){
 		//first:set address
 		rc = i2c_smbus_write_i2c_block_data(chip->client,0x01,2,&addr_buf[0]);
@@ -185,7 +279,7 @@ update_fw:
 			pr_err("%s stm8s_update_fw,i2c_write 0x01 error, i=%d\n",__func__,i);
 			goto update_fw_err;
 		}
-
+		
 		//erase data:0x10 words once
 		i2c_smbus_write_i2c_block_data(chip->client,0x04,1,&zero_buf[0]);
 		msleep(1);
@@ -215,15 +309,26 @@ update_fw:
 		pr_err("%s fw write error\n",__func__);
 		goto update_fw_err;
 	}
-
+	
 	//fw check begin:read data from pic1503/1508,and compare it with Pic16F_firmware_data[]
 	rc = stm8s_fw_check(chip);
+#if 0
+	if (is_project(OPPO_15022))
+	{
+		if (get_PCB_Version() == HW_VERSION__16)
+			stm8s_fw_data_recover(chip,vooc_firmware_data,0,vooc_fw_ver_count - 34);
+	}
+	else
+	{
+		stm8s_fw_data_recover(chip,vooc_firmware_data,0,vooc_fw_ver_count - 34);
+	}
+#endif
 	if(rc == FW_CHECK_FAIL){
 		download_again++;
 		if(download_again > 3){
 			goto update_fw_err;
 		}
-
+		
 #ifdef OPPO_USE_FAST_CHARGER
 		opchg_set_reset_active(bq27541_di);
 #endif
@@ -254,9 +359,9 @@ update_fw:
 		msleep(5);
 		//stm8s_fw_data_recover(chip,vooc_firmware_data,vooc_fw_ver_count - 34,34);
 	}
-
+	
 	//write 0x7F0~0x7FF end
-
+	
 	msleep(2);
 	//jump to app code begin
 	i2c_smbus_write_i2c_block_data(chip->client,0x06,1,&zero_buf[0]);
@@ -265,11 +370,17 @@ update_fw:
 	vooc_have_updated = 1;
 
 	//pull down GPIO96 to power off MCU1503/1508
-	if(enable) {
+	if(enable) {	
+	#if 0
+		rc = gpio_tlmm_config(GPIO_CFG(96, 0, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA),GPIO_CFG_ENABLE);
+		gpio_set_value(96,0);
+	#endif
+		//rc = opchg_set_switch_mode(chip,VOOC_CHARGER_MODE);//rc=opchg_fast_charging_pin_enable(chip,1);
+		//rc = opchg_set_switch_mode(NORMAL_CHARGER_MODE);
 		if(rc < 0){
 			//pr_err("%s pull down switch fail\n",__func__);
 		}
-	}
+	}	
 	pr_err("%s stm8s update_fw success\n",__func__);
 	if (enable)
 		opchg_chip->updating_fw_flag = false;
@@ -277,6 +388,12 @@ update_fw:
 
 update_fw_err:
 	if(enable){
+	#if 0
+		rc = gpio_tlmm_config(GPIO_CFG(96, 0, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA),GPIO_CFG_ENABLE);
+		gpio_set_value(96,0);
+	#endif
+		//rc = opchg_set_switch_mode(chip,VOOC_CHARGER_MODE);//rc=opchg_fast_charging_pin_enable(chip,1);
+		//rc = opchg_set_switch_mode(NORMAL_CHARGER_MODE);
 		if(rc < 0){
 			//pr_err("%s pull down switch fail\n",__func__);
 		}
@@ -300,25 +417,34 @@ void stm8s_fw_update_thread(struct work_struct *work)
 	msleep(1000);
 	stm8s_fw_update(chip,1);
 
+	#if 0
+    	/*update time 5s*/
+    	schedule_delayed_work(&chip->update_opfastchg_thread_work,
+                            round_jiffies_relative(msecs_to_jiffies
+                            (OPCHG_THREAD_INTERVAL)));
+	#endif
+	
 }
 
 
 void opchg_stm8s_fast_charging_works_init(struct opchg_fast_charger *chip)
 {
-    INIT_DELAYED_WORK(&chip->update_opfastchg_thread_work, stm8s_fw_update_thread);
+    INIT_DELAYED_WORK(&chip->update_opfastchg_thread_work, stm8s_fw_update_thread);        
     schedule_delayed_work(&chip->update_opfastchg_thread_work,
                             round_jiffies_relative(msecs_to_jiffies(OPCHG_THREAD_INTERVAL_INIT)));
-
+    
+    //INIT_DELAYED_WORK(&chip->opfastchg_delayed_wakeup_work, opchg_fast_charging_delayed_wakeup_thread);
+    //chip->g_fast_charging_wakeup = 0;
 }
 static int stm8s_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	int retval;
     struct opchg_fast_charger *chip;
-
+	 
 	/**/
 	if (vooc_get_mcu_hw_type() != OPCHG_VOOC_STM8S_ID)
 		return 0;
-
+	
 	chip = devm_kzalloc(&client->dev, sizeof(*chip), GFP_KERNEL);
     if (!chip) {
         dev_err(&client->dev, "Couldn't allocate memory\n");
@@ -342,7 +468,7 @@ static int stm8s_probe(struct i2c_client *client, const struct i2c_device_id *id
             goto err_set_vtg_i2c;
         }
     }
-
+    
     retval = regulator_enable(chip->vcc_i2c);
     if (retval) {
         dev_err(&client->dev,"Regulator vcc_i2c enable failed " "rc=%d\n", retval);
@@ -380,25 +506,25 @@ static int stm8s_probe(struct i2c_client *client, const struct i2c_device_id *id
 	{
 		register_device_proc("fastcharger_mcu", DEVICE_FASTCHARGER_MCU_VERSION, DEVICE_FASTCHARGER_MCU_TYPE_UNKOWN);
 	}
-
+	
 	/**/
 	//rc=opchg_pic16f_parse_dt(chip);
 
 	/**/
 	opchg_stm8s_fast_charging_works_init(chip);
-
+	
 	return 0;
-
+	
 err_set_vtg_i2c:
 		if (regulator_count_voltages(chip->vcc_i2c) > 0) {
 			regulator_set_voltage(chip->vcc_i2c, 0, OPCHARGER_I2C_VTG_MAX_UV);
 		}
-
+	
 err_check_functionality_failed:
 	pr_err("%s is fail\n",__func__);
 	return 0;
 }
-
+    
 
 static int stm8s_remove(struct i2c_client *client)
 {
@@ -432,3 +558,4 @@ module_i2c_driver(stm8s_fastcg_driver);
 MODULE_DESCRIPTION("OPCHARGER Charger");
 MODULE_LICENSE("GPL v2");
 MODULE_ALIAS("i2c:opcharger-charger");
+

@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Copyright (c)  2014- 2014  Guangdong OPPO Mobile Telecommunications Corp., Ltd
-* CONFIG_MACH_OPPO
+* VENDOR_EDIT
 * Description: Source file for CBufferList.
 *           To allocate and free memory block safely.
 * Version   : 0.0
@@ -67,13 +67,13 @@ OPCHG_VOOC_WATCHDOG_OUT,			// fast charging is  watchdog delay
 OPCHG_VOOC_FAST_OUT,				// fast charging is drop out delay
 OPCHG_VOOC_FAST_OUT_DELAY, 		// fast charging is drop out delay
 OPCHG_VOOC_TO_STANDARD,		// fast charging is to Standard charging
-OPCHG_VOOC_TO_FAST,			// fast charging is to fast charging
+OPCHG_VOOC_TO_FAST,			// fast charging is to fast charging	
 OPCHG_VOOC_IN_FAST,			// fast charging is in fast charging
 };
 #else
 #define  OPCHG_VOOC_WATCHDOG_OUT		0		// fast charging is  watchdog delay
 #define  OPCHG_VOOC_TO_STANDARD		1		// fast charging is to Standard charging
-#define  OPCHG_VOOC_TO_FAST			2		// fast charging is to fast charging
+#define  OPCHG_VOOC_TO_FAST			2		// fast charging is to fast charging	
 #define  OPCHG_VOOC_IN_FAST			3		// fast charging is in fast charging
 #endif
 

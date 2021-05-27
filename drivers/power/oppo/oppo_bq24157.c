@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Copyright (c)  2014- 2014  Guangdong OPPO Mobile Telecommunications Corp., Ltd
-* CONFIG_MACH_OPPO
+* VENDOR_EDIT
 * Description: Source file for CBufferList.
 *           To allocate and free memory block safely.
 * Version   : 0.0
@@ -15,21 +15,21 @@
 *******************************************************************************/
 
 #define OPPO_BQ24157_PAR
-#include "oppo_inc.h"
+#include <oppo_inc.h>
 
 int bq24157_get_prop_charge_type(struct opchg_charger *chip)
 {
     int rc;
     u8 reg = 0;
-
+    
     rc = opchg_read_reg(chip, BQ24157_STATUS_CTRL_REG, &reg);
     if (rc) {
         dev_err(chip->dev, "Couldn't read STAT_C rc = %d\n", rc);
         return POWER_SUPPLY_CHARGE_TYPE_UNKNOWN;
     }
-
+    
     reg &= BQ24157_CHARGE_STATUS_MASK;
-
+    
     if (reg == BQ24157_CHARGE_IN_PROGRESS) {
         return POWER_SUPPLY_CHARGE_TYPE_FAST;
     } else {
@@ -53,13 +53,13 @@ int bq24157_get_prop_batt_status(struct opchg_charger *chip)
 	} else {
 		vbus_low_count = 0;
 	}
-
+	
     rc = opchg_read_reg(chip, BQ24157_STATUS_CTRL_REG, &reg);
     if (rc) {
         dev_err(chip->dev, "Couldn't read STAT_C rc = %d\n", rc);
         return POWER_SUPPLY_STATUS_UNKNOWN;
     }
-
+    
 	reg &= BQ24157_CHARGE_STATUS_MASK;
 	if (reg == BQ24157_CHARGE_IN_PROGRESS || reg == BQ24157_CHARGE_TERM) {
         return POWER_SUPPLY_STATUS_CHARGING;
@@ -72,7 +72,7 @@ int bq24157_get_charging_status(struct opchg_charger *chip)
 {
     int rc;
     u8 reg = 0;
-
+    
     rc = opchg_read_reg(chip, BQ24157_CTRL_REG, &reg);
     if (rc) {
         dev_err(chip->dev, "Couldn't read STAT_C rc = %d\n", rc);
@@ -88,10 +88,10 @@ int bq24157_set_otg_regulator_enable(struct regulator_dev *rdev)
 {
     int rc = 0;
     struct opchg_charger *chip = rdev_get_drvdata(rdev);
-
+    
     opchg_config_charging_disable(chip, CHAGER_OTG_DISABLE, 1);
     opchg_set_charging_disable(chip, !!chip->disabled_status);
-
+    
     rc = opchg_masked_write(chip, BQ24157_BATTERY_VOL_REG, BQ24157_OTG_MASK, BQ24157_OTG_ENABLE);
     if (rc) {
         dev_err(chip->dev, "Couldn't enable  OTG mode rc=%d\n", rc);
@@ -108,10 +108,10 @@ int bq24157_set_otg_regulator_disable(struct regulator_dev *rdev)
 {
     int rc = 0;
     struct opchg_charger *chip = rdev_get_drvdata(rdev);
-
+    
     opchg_config_charging_disable(chip, CHAGER_OTG_DISABLE, 0);
     opchg_set_charging_disable(chip, !!chip->disabled_status);
-
+    
     rc = opchg_masked_write(chip, BQ24157_BATTERY_VOL_REG, BQ24157_OTG_MASK, BQ24157_OTG_DISABLE);
     if (rc) {
         dev_err(chip->dev, "Couldn't disable OTG mode rc=%d\n", rc);
@@ -120,7 +120,7 @@ int bq24157_set_otg_regulator_disable(struct regulator_dev *rdev)
 	{
 		dev_err(chip->dev, "bq24157_set_otg_regulator_disable\n");
 	}
-
+	
     return rc;
 }
 
@@ -129,7 +129,7 @@ int bq24157_get_otg_regulator_is_enable(struct regulator_dev *rdev)
     int rc = 0;
     u8 reg = 0;
     struct opchg_charger *chip = rdev_get_drvdata(rdev);
-
+    
     rc = opchg_read_reg(chip, BQ24157_BATTERY_VOL_REG, &reg);
     if (rc) {
         dev_err(chip->dev, "Couldn't read OTG enable bit rc=%d\n", rc);
@@ -139,7 +139,7 @@ int bq24157_get_otg_regulator_is_enable(struct regulator_dev *rdev)
 	{
 		dev_err(chip->dev, "bq24157_get_otg_regulator_is_enable read OTG enable bit =%d\n", reg);
     }
-
+    
     return (reg & BQ24157_OTG_MASK) ? 1 : 0;
 }
 
@@ -167,11 +167,11 @@ int bq24157_set_otg_enable(void)
 int bq24157_set_otg_disable(void)
 {
     int rc = 0;
-
+	
     if(opchg_chip == NULL)
 	{
 		return rc;
-	}
+	} 
 	rc = opchg_masked_write(opchg_chip, BQ24157_BATTERY_VOL_REG, BQ24157_OTG_MASK, BQ24157_OTG_DISABLE);
     if (rc) {
         pr_debug("Couldn't disable OTG mode rc=%d\n", rc);
@@ -180,7 +180,7 @@ int bq24157_set_otg_disable(void)
 	{
 		pr_debug("bq24157_set_otg_disable\n");
 	}
-
+	
     return rc;
 }
 
@@ -208,23 +208,23 @@ int bq24157_get_otg_enable(void)
 int bq24157_set_reset_charger(struct opchg_charger *chip, bool reset)
 {
     int rc;
-
+    
 	chip->batt_pre_full = 0;
     chip->batt_full = 0;
-
+	
     rc = opchg_masked_write(chip, BQ24157_TERM_FAST_CURRENT_REG, BQ24157_RESET_MASK,
                             reset ? BQ24157_RESET_ENABLE : BQ24157_RESET_NONE);
     if (rc < 0) {
 		pr_err("Couldn't set REGISTER_RESET = %d, rc = %d\n", reset, rc);
 	}
-
+	
 	return rc;
 }
 
 int bq24157_set_charging_disable(struct opchg_charger *chip, bool disable)
 {
     int rc;
-
+    
     rc = opchg_masked_write(chip, BQ24157_CTRL_REG, BQ24157_CHARGE_ENABLE_MASK,
                             disable ? BQ24157_CHARGE_DISABLE : BQ24157_CHARGE_ENABLE);
     if (rc < 0) {
@@ -234,20 +234,20 @@ int bq24157_set_charging_disable(struct opchg_charger *chip, bool disable)
 	{
 		pr_err(" set CHG_ENABLE_BIT disable = %d\n", disable);
 	}
-
+	
 	return rc;
 }
 
 int bq24157_set_suspend_enable(struct opchg_charger *chip, bool enable)
 {
     int rc;
-
+    
     rc = opchg_masked_write(chip, BQ24157_CTRL_REG, BQ24157_SUSPEND_MASK,
                             enable ? BQ24157_SUSPEND_ENABLE : BQ24157_SUSPEND_DISABLE);
     if (rc < 0) {
 		pr_err("Couldn't set CHG_SUSP_EN_BIT enable = %d, rc = %d\n", enable, rc);
 	}
-
+	
 	return rc;
 }
 
@@ -256,7 +256,7 @@ int bq24157_set_enable_volatile_writes(struct opchg_charger *chip)
     int rc=0;
 
 	//need do nothing
-
+	
     return rc;
 }
 
@@ -265,27 +265,31 @@ int bq24157_set_fastchg_current(struct opchg_charger *chip, int ifast_mA)
 	int rc;
     u8 value;
 
+	if(is_project(OPPO_15025)){
+		if((!chip->batt_authen) && (ifast_mA > chip->non_standard_fastchg_current_ma))
+			ifast_mA = chip->non_standard_fastchg_current_ma;
+	}
 	pr_err("%s ibatmax:%d\n",__func__,ifast_mA);
 	if(ifast_mA < BQ24157_FAST_CURRENT_OFFSET_MA){
 		value = BQ24157_LOWCHG_CURRENT_ENABLE;
-		rc = opchg_masked_write(chip, BQ24157_SPECIAL_CHARGER_VOL_REG,
+		rc = opchg_masked_write(chip, BQ24157_SPECIAL_CHARGER_VOL_REG, 
 			BQ24157_LOWCHG_CURRENT_MASK, value);
 		return rc;
-	}
+	} 
 
-	opchg_masked_write(chip, BQ24157_SPECIAL_CHARGER_VOL_REG,
+	opchg_masked_write(chip, BQ24157_SPECIAL_CHARGER_VOL_REG, 
 			BQ24157_LOWCHG_CURRENT_MASK, BQ24157_LOWCHG_CURRENT_DISABLE);
-
+	
 	if(ifast_mA > BQ24157_FAST_CURRENT_MAX_MA) {
 		ifast_mA = BQ24157_FAST_CURRENT_MAX_MA;
 	}
 	value = ((ifast_mA - BQ24157_FAST_CURRENT_OFFSET_MA) / BQ24157_FAST_CURRENT_STEP_MA) << 4;
-
+	
 	rc = opchg_masked_write(chip, BQ24157_TERM_FAST_CURRENT_REG, BQ24157_FAST_CURRENT_MASK, value);
     if (rc < 0) {
 		pr_err("%s error\n",__func__);
 	}
-
+	
 	return rc;
 }
 
@@ -312,8 +316,8 @@ int bq24157_iusbmax_set_noaicl(struct opchg_charger *chip, int iusbin_mA)
 	else if(iusbin_mA == 800)
 		value = BQ24157_IUSBMAX_800MA;
 	else
-		value = BQ24157_IUSBMAX_NOLIMIT;
-
+		value = BQ24157_IUSBMAX_NOLIMIT; 
+	
 	return opchg_masked_write(chip, BQ24157_CTRL_REG, BQ24157_IUSBMAX_MASK, value);
 }
 
@@ -337,14 +341,14 @@ int bq24157_set_input_chg_current(struct opchg_charger *chip, int iusbin_mA, boo
 	int chg_vol=0,rc=0;
 
     chip->is_charger_det = 1;
-
+	
 	if (iusbin_mA <= 2)
         iusbin_mA = USB2_MIN_CURRENT_MA;
     else if (iusbin_mA <= USB2_MIN_CURRENT_MA)
         iusbin_mA = USB2_MAX_CURRENT_MA;
 	pr_err("%s iusbin_mA:%d,aicl_current:%d,fast_current:%d,aicl_enable:%d new\n",__func__,
 		iusbin_mA,chip->aicl_current,chip->max_fast_current[FAST_CURRENT_MIN],aicl_enable);
-
+	
 	if(iusbin_mA <= CURRENT_500MA){
 		rc = bq24157_iusbmax_set_noaicl(chip, iusbin_mA);
 		chip->is_charger_det = 0;
@@ -364,14 +368,14 @@ int bq24157_set_input_chg_current(struct opchg_charger *chip, int iusbin_mA, boo
 		chip->is_charger_det = 0;
 		return 0;
 	}
-	if((chip->charging_opchg_temp_statu == OPCHG_CHG_TEMP_COLD) ||
+	if((chip->charging_opchg_temp_statu == OPCHG_CHG_TEMP_COLD) || 
 		(chip->charging_opchg_temp_statu == OPCHG_CHG_TEMP_HOT)){
 		pr_err("%s cold/hot,iusbin_mA:%d\n",__func__,iusbin_mA);
 		rc = bq24157_iusbmax_set_noaicl(chip, iusbin_mA);
 		chip->is_charger_det = 0;
 		return 0;
 	}
-
+	
 	rc = bq24157_iusbmax_set_noaicl(chip, CURRENT_500MA);
 	msleep(20);
 	opchg_set_fast_chg_current(chip, chip->max_fast_current[FAST_CURRENT_MIN]);
@@ -440,9 +444,13 @@ int bq24157_set_float_voltage(struct opchg_charger *chip, int vfloat_mv)
 {
     u8 value;
 
+	if(is_project(OPPO_15025)){
+		if((!chip->batt_authen) && (vfloat_mv > chip->non_standard_vfloat_mv))
+			vfloat_mv = chip->non_standard_vfloat_mv;
+	}
 	if(vfloat_mv < BQ24157_FLOAT_VOLTAGE_MIN_MV)
 		vfloat_mv = BQ24157_FLOAT_VOLTAGE_MIN_MV;
-
+	
 	pr_err("%s vfloat_mv:%d\n",__func__,vfloat_mv);
 	value = (vfloat_mv - BQ24157_FLOAT_VOLTAGE_MIN_MV) / BQ24157_FLOAT_VOLLTAGE_STEP_MV;
 	value <<= BQ24157_FLOAT_VOLTAGE_SHIFT;
@@ -452,7 +460,7 @@ int bq24157_set_float_voltage(struct opchg_charger *chip, int vfloat_mv)
 
 int bq24157_set_wdt_timer(struct opchg_charger *chip, bool enable)
 {
-
+ 
     return 0;
 }
 
@@ -463,7 +471,7 @@ int bq24157_set_vindpm_vol(struct opchg_charger *chip, int vol)
 
 	value = (vol - BQ24157_VINDPM_OFFSET_MV) / BQ24157_VINDPM_STEP_MV;
     rc = opchg_masked_write(chip, BQ24157_SPECIAL_CHARGER_VOL_REG, BQ24157_VINDPM_MASK, value);
-
+	
 	return rc;
 }
 
@@ -476,34 +484,34 @@ int bq24157_max_volt_current_set(struct opchg_charger *chip, int max_batt_vol, i
 		max_batt_vol = BQ24157_MAX_BATT_VOL_MAX_MV;
 	else if(max_batt_vol < BQ24157_MAX_BATT_VOL_MIN_MV)
 		max_batt_vol = BQ24157_MAX_BATT_VOL_MIN_MV;
-
+	
 	value_low = (max_batt_vol - BQ24157_MAX_BATT_VOL_MIN_MV) / BQ24157_MAX_BATT_VOL_STEP_MV;
 	value_low = value_low & 0x0F;
 	if(max_current > BQ24157_MAX_FAST_CURRENT_MAX_MA)
 		max_current = BQ24157_MAX_FAST_CURRENT_MAX_MA;
-	value = ((max_current - BQ24157_MAX_FAST_CURRENT_OFFSET_MA) / BQ24157_MAX_FAST_CURRENT_STEP_MA)
+	value = ((max_current - BQ24157_MAX_FAST_CURRENT_OFFSET_MA) / BQ24157_MAX_FAST_CURRENT_STEP_MA) 
 				<< BQ24157_MAX_FAST_CURRENT_SHIFT;
 	value = value |  value_low;
     rc = opchg_masked_write(chip, BQ24157_SAFETY_LIMIT_REG, BQ24157_MAX_VOLT_CURRENT_MASK, value);
-
+	
 	return rc;
 }
 
 int bq24157_set_wdt_reset(struct opchg_charger *chip)
 {
     int rc = 0;
-
-
+    
+    
     return rc;
 }
 
 int bq24157_chg_term_enable(struct opchg_charger *chip, bool enable)
 {
     int rc = 0;
-
+    
     rc = opchg_masked_write(chip, BQ24157_CTRL_REG, BQ24157_TERM_ENABLE_MASK,
 			enable ? BQ24157_TERM_ENABLE : 0x00);
-
+	
     return rc;
 }
 
@@ -516,11 +524,11 @@ int bq24157_weak_battery_vol_set(struct opchg_charger *chip, int weak_mv)
 		weak_mv = BQ24157_WEAK_BATTERY_MAX_MV;
 	else if(weak_mv < BQ24157_WEAK_BATTERY_MIN_MV)
 		weak_mv = BQ24157_WEAK_BATTERY_MIN_MV;
-
+		
 	value = (weak_mv - BQ24157_WEAK_BATTERY_MIN_MV) / BQ24157_WEAK_BATTERY_STEP_MV;
 	value = value << BQ24157_WEAK_BATTERY_SHIFT;
     rc = opchg_masked_write(chip, BQ24157_CTRL_REG, BQ24157_WEAK_BATTERY_MASK, value);
-
+	
     return rc;
 }
 
@@ -528,7 +536,7 @@ int bq24157_check_battovp(struct opchg_charger *chip)
 {
     int rc = 0;
 	u8 value;
-
+	
     if(chip->chg_present == true) {
 		rc = opchg_read_reg(chip, BQ24157_STATUS_CTRL_REG,&value);
         if ((value & BQ24157_FAULT_STATUS_MASK) == BQ24157_BATTERY_OVP){
@@ -549,7 +557,7 @@ int bq24157_check_charging_pre_full(struct opchg_charger *chip)
 {
     int rc = 0;
 	u8 value = 0;
-
+	 
     if(chip->chg_present == true) {
         rc = opchg_read_reg(chip, BQ24157_STATUS_CTRL_REG,&value);
         if ((value & BQ24157_CHARGE_STATUS_MASK) == BQ24157_CHARGE_TERM) {
@@ -567,7 +575,7 @@ int bq24157_check_charging_pre_full(struct opchg_charger *chip)
 }
 
 int bq24157_hw_init(struct opchg_charger *chip)
-{
+{	
 	//don't write anything to BQ24157_STATUS_CTRL_REG(0x00) because of safety limit
 	//bq24157_stat_func_enable(chip, false);
 	bq24157_max_volt_current_set(chip, 4340, BQ24157_MAX_FAST_CURRENT_MAX_MA);	//it must be before set_float_voltage and set_fast_current
@@ -576,16 +584,16 @@ int bq24157_hw_init(struct opchg_charger *chip)
 	/* set the fast charge current limit */
 	//opchg_set_fast_chg_current(chip, chip->max_fast_current[FAST_CURRENT_MIN]);
 	opchg_set_fast_chg_current(chip, BQ24157_FAST_CURRENT_OFFSET_MA);
-
+	
     /* set iterm current*/
     bq24157_set_termchg_current(chip, chip->iterm_ma);
-
+    
     bq24157_set_vindpm_vol(chip, 4440);
 
 	bq24157_chg_term_enable(chip, true);
 
 	bq24157_weak_battery_vol_set(chip, BQ24157_WEAK_BATTERY_MIN_MV);
-
+    
     //opchg_config_charging_disable(chip, USER_DISABLE, !!chip->disabled_status);
     opchg_config_charging_disable(chip, USER_DISABLE, 0);
 	return 0;
@@ -595,8 +603,8 @@ void bq24157_dump_regs(struct opchg_charger *chip)
 {
 	int rc;
 	u8 reg, addr;
-
-	// read status register
+	
+	// read status register   
 	for (addr = BQ24157_FIRST_REG; addr <= BQ24157_LAST_REG; addr++) {
 		rc = opchg_read_reg(chip, addr, &reg);
 		if (rc) {
@@ -615,19 +623,22 @@ int bq24157_chg_uv(struct opchg_charger *chip, u8 status)
     //msleep(10);
     opchg_hw_init(chip);
 
+	//if(is_project(OPPO_14037) || is_project(OPPO_14051) || is_project(OPPO_15057))
+	//	opchg_switch_to_usbin(chip,!status);
+
     if (status == 0) {
         chip->g_chg_in = 1;
 		if(chip->g_is_wakeup == 0){ //if awake not be lock,lock it here else do nothing
             __pm_stay_awake(&chip->source);
             chip->g_is_wakeup= 1;
-        }
+        }		
     }
     else {
         chip->g_chg_in = 0;
         schedule_delayed_work(&chip->opchg_delayed_wakeup_work,
                             round_jiffies_relative(msecs_to_jiffies(2000)));
     }
-
+    
     /* use this to detect USB insertion only if !apsd */
     if (chip->disable_apsd && status == 0) {
         chip->chg_present = true;
@@ -635,9 +646,9 @@ int bq24157_chg_uv(struct opchg_charger *chip, u8 status)
         power_supply_set_supply_type(chip->usb_psy, POWER_SUPPLY_TYPE_USB);
         power_supply_set_present(chip->usb_psy, chip->chg_present);
 	}
-
+	
     if (status != 0) {
-        chip->chg_present = false;
+        chip->chg_present = false;	
         dev_dbg(chip->dev, "%s charger is out updating usb_psy present=%d", __func__, chip->chg_present);
         /* we can't set usb_psy as UNKNOWN so early, it'll lead USERSPACE issue */
         power_supply_set_present(chip->usb_psy, chip->chg_present);
@@ -646,7 +657,7 @@ int bq24157_chg_uv(struct opchg_charger *chip, u8 status)
     power_supply_changed(chip->usb_psy);
 
     dev_dbg(chip->dev, "chip->chg_present = %d\n", chip->chg_present);
-
+    
     return 0;
 }
 
@@ -654,7 +665,7 @@ void bq24157_usbin_valid_work(struct work_struct *work)
 {
 	struct opchg_charger *chip = container_of(work,
                             struct opchg_charger, bq24157_usbin_valid_work);
-
+							
 	if(bq24157_get_otg_enable()){
 		pr_err("%s otg enabled,return\n",__func__);
 		return ;
@@ -695,3 +706,5 @@ fail_init_status:
     dev_err(chip->dev, "bq24157 couldn't get intial status\n");
     return rc;
 }
+
+
