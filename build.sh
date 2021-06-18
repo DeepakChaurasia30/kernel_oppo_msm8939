@@ -30,7 +30,7 @@ cp out/arch/arm64/boot/Image anykernel3
 
 cc anykernel3/dtbtool.c -o out/arch/arm64/boot/dts/dtbtool
 ( cd out/arch/arm64/boot/dts; ./dtbtool -v -s 2048 -o dt.img )
-( cp out/arch/arm64/boot/dts/dt.img anykernel3 
+( cp out/arch/arm64/boot/dts/dt.img anykernel3 )
 
 ( cd anykernel3; zip -r ../out/A37F_KERNEL_`date +%d\.%m\.%Y_%H\:%M\:%S`.zip . -x 'LICENSE' 'README.md' 'dtbtool.c' )
 
