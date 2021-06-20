@@ -15,20 +15,37 @@
 
 &soc {
 	sound {
+		compatible = "qcom,msm8x16-audio-codec";
+		qcom,model = "msm8x16-snd-card-mtp";
+		qcom,msm-snd-card-id = <0>;
+		qcom,msm-codec-type = "internal";
+		qcom,msm-ext-pa = "primary";
 		qcom,msm-mclk-freq = <9600000>;
+		/*zhangping@Multimedia, 2015-03-12, Modify for headset*/
+		/*qcom,msm-mbhc-hphl-swh = <0>;*/
 		qcom,msm-mbhc-hphl-swh = <1>;
-		qcom,msm-hs-micbias-type = "external";
-		qcom,msm-micbias2-ext-cap;
+        /*zhangping@Multimedia, 2015-03-12, Modify end*/
+		qcom,msm-mbhc-gnd-swh = <0>;
+		qcom,msm-micbias1-ext-cap;
+        /*zhangping@Multimedia, 2015-03-11, Modify for headset*/
+	        qcom,msm-micbias2-ext-cap;
+        qcom,msm-hs-micbias-type = "internal";	
+       /* qcom,msm-hs-micbias-type = "external";*/	
+        /*zhangping@Multimedia, 2015-03-11, Modify end*/
 		qcom,audio-routing =
 			"RX_BIAS", "MCLK",
 			"SPK_RX_BIAS", "MCLK",
 			"INT_LDO_H", "MCLK",
 			"MIC BIAS External", "Handset Mic",
-			"MIC BIAS External2", "Headset Mic",
+			"MIC BIAS Internal2", "Headset Mic",
 			"MIC BIAS External", "Secondary Mic",
 			"AMIC1", "MIC BIAS External",
-			"AMIC2", "MIC BIAS External2",
-			"AMIC3", "MIC BIAS External";
+			"AMIC2", "MIC BIAS Internal2",
+			"AMIC3", "MIC BIAS External",
+			"DMIC1", "MIC BIAS Internal1",
+			"MIC BIAS Internal1", "Digital Mic1",
+			"DMIC2", "MIC BIAS Internal1",
+			"MIC BIAS Internal1", "Digital Mic2";;
 		/delete-property/ qcom,cdc-us-euro-gpios;
 		spk-pa-en = <&msm_gpio 120 0x00>;
 		yda145_boost-en = <&msm_gpio 118 0x00>;
