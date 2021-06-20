@@ -565,7 +565,10 @@ static int bq27541_soc_calibrate(struct opchg_bms_charger *di, int soc)
 	//stap4: soc display
 	di->soc_pre = soc_calib;
 	opchg_set_pmic_soc_memory(soc_calib);
-
+	#ifdef VENDOR_EDIT
+     /*chaoying.chen@EXP.BaseDrv.charge,2016/02/16 add internal capacity node for 15399 */
+    opchg_chip->soc_bms = soc;
+	#endif //VENDOR_EDIT
 	//stap5: debug_log
 	counter_debug++;
 	if((counter_debug >= 9)||(soc_calib_temp != soc_calib) || (soc_temp != soc))

@@ -206,6 +206,10 @@ enum power_supply_property {
 	POWER_SUPPLY_PROP_ENABLE_JEITA_DETECTION,
 	/* Local extensions of type int64_t */
 	POWER_SUPPLY_PROP_CHARGE_COUNTER_EXT,
+#ifdef VENDOR_EDIT
+	/*chaoying.chen@EXP.BaseDrv.charge,2016/02/16 add internal capacity node for 15399 */
+	POWER_SUPPLY_PROP_INTERNAL_CAPACITY,
+#endif //VENDOR_EDIT
 	/* Properties of type `const char *' */
 	POWER_SUPPLY_PROP_MODEL_NAME,
 	POWER_SUPPLY_PROP_MANUFACTURER,

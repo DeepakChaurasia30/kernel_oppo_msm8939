@@ -52,6 +52,9 @@ static enum power_supply_property opchg_battery_properties[] = {
 	POWER_SUPPLY_PROP_BATTERY_CHARGER_ENABLE,//dengnw add for charger enable for MMI test
 	POWER_SUPPLY_PROP_BATTERY_NOTIFY,		//dengnw add for charging status
 	POWER_SUPPLY_PROP_POWER_OFF,			//lfc add for power_off when vbatt is low
+/*chaoying.chen@EXP.BaseDrv.charge,2016/02/16 add internal capacity node for 15399 */
+      POWER_SUPPLY_PROP_INTERNAL_CAPACITY,
+#endif //VENDOR_EDIT
 };
 
 static enum power_supply_property pm_power_props_mains[] = {
@@ -657,6 +660,11 @@ int opchg_battery_get_property(struct power_supply *psy,
 			val->intval = 0;
 			break;
 
+/*chaoying.chen@EXP.BaseDrv.charge,2016/02/16 add internal capacity node for 15399 */
+        case POWER_SUPPLY_PROP_INTERNAL_CAPACITY:
+            val->intval = chip->soc_bms;
+            break;
+#endif //VENDOR_EDIT
 	    default:
 	        return -EINVAL;
 	}
