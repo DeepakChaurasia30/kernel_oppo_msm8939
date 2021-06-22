@@ -45,7 +45,7 @@
 			"DMIC1", "MIC BIAS Internal1",
 			"MIC BIAS Internal1", "Digital Mic1",
 			"DMIC2", "MIC BIAS Internal1",
-			"MIC BIAS Internal1", "Digital Mic2";;
+			"MIC BIAS Internal1", "Digital Mic2";
 		/delete-property/ qcom,cdc-us-euro-gpios;
 		spk-pa-en = <&msm_gpio 120 0x00>;
 		yda145_boost-en = <&msm_gpio 118 0x00>;
