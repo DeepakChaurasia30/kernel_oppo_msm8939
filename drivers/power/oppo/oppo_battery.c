@@ -1438,7 +1438,8 @@ void opchg_aicl_point_set(struct opchg_charger *chip)
 
 	//chip->bat_instant_vol = opchg_get_prop_battery_voltage_now(chip) / 1000;
 	chip->bat_instant_vol = opchg_get_prop_battery_voltage_now(chip);
-	if((chip->bat_instant_vol < 4140 * 1000) && (!chip->vindpm_level)){
+	/*Mofei@EXP.BaseDrv.charge,2016/03/17 motify for charging current jump*/
+	if((chip->bat_instant_vol < 4200 * 1000) && (!chip->vindpm_level)){
 		if(chip->driver_id == OPCHG_BQ24196_ID)
 			chip->vindpm_vol = 4440;
 		else if(chip->driver_id == OPCHG_BQ24188_ID)
