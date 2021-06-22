@@ -1237,7 +1237,8 @@ void opchg_check_recharging_voltage(struct opchg_charger *chip)
 		//0~5
 		else if(chip->charging_opchg_temp_statu == OPCHG_CHG_TEMP_PRE_COOL1)
 		{
-			if(chip->bat_instant_vol < 4100 * 1000)
+	  //MoFei@EXP.BaseDrv.charge,2016-2-1 motify for recharging voltage in 0-5 degree
+			if(chip->bat_instant_vol < 4150 * 1000)
 				vol_low_count++;
 			else
 				vol_low_count = 0;
