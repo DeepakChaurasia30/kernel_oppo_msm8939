@@ -292,28 +292,18 @@
 			synaptics,id1-gpio = <&msm_gpio 109 0x0>;
 			synaptics,id2-gpio = <&msm_gpio 114 0x0>;
 			synaptics,id3-gpio = <&msm_gpio 119 0x0>;
-			pinctrl-names = "default", "tp_id_pull_up", "tp_id_pull_down";
-			pinctrl-0 = <&ts_int_active>,
-				            <&tp_gpio_id1_config_active>,
-							<&tp_gpio_id2_config_active>,
-							<&tp_gpio_id3_config_active>;
-			pinctrl-1 = <&tp_gpio_id1_config_active>,
-				            <&tp_gpio_id2_config_active>,
-							<&tp_gpio_id3_config_active>;
-			pinctrl-2 = <&tp_gpio_id1_config_sleep>,
-				            <&tp_gpio_id2_config_sleep>,
-							<&tp_gpio_id3_config_sleep>;
+			
+			pinctrl-names = "default","tp_id_pull_up","tp_id_pull_down";
+			pinctrl-0 = <&ts_int_active   &tp_gpio_id1_pullup   &tp_gpio_id2_pullup   &tp_gpio_id3_pullup>;
+			pinctrl-1 = <&tp_gpio_id1_pullup   &tp_gpio_id2_pullup   &tp_gpio_id3_pullup>;
+			pinctrl-2 = <&tp_gpio_id1_pulldown &tp_gpio_id2_pulldown &tp_gpio_id3_pulldown>;
+			
 			synaptics,max-num-support = <10>;
 			synaptics,max-x-point = <10>;
-			synaptics,button-map = <100>,
-				                        <140>,
-										<1400>;
-			synaptics,tx-rx-num = <13>,
-				                      <23>;
-			synaptics,display-coords = <720>,
-				                           <1280>;
-			synaptics,panel-coords = <1100>,
-				                         <1745>;
+			synaptics,button-map= <100 140 1400>;//width-height-y.position
+			synaptics,tx-rx-num = <13 23>;
+			synaptics,display-coords = <720 1280>;
+			synaptics,panel-coords = <1100 1745>;//max_x,max_y of display area--Not include virtual keys!
 			vdd_2v8-supply = <&pm8916_l17>;
 			vcc_i2c_1v8-supply = <&pm8916_l6>;
 			synaptics,black-gesture-enabled;
