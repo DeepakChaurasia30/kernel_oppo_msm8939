@@ -23,55 +23,56 @@
 		/delete-node/ spi2_suspend;
 		/delete-node/ ice40-spi-usb-pins;
 		
+		/*OPPO 2015-04-14 hantong add for sub_board_detect*/
+		
+		/*OPPO 2014-09-05 wangwenxue add for TP*/
 		tp_gpio_id1_config {
+			/* MCLK */
 			qcom,pins = <&gp 109>;
 			qcom,num-grp-pins = <1>;
 			qcom,pin-func = <0>;
 			label = "tp_gpio_id1_config";
-
-			tp_gpio_id1_config_active: active {
-				drive-strength = <2>;
-				bias-pull-up;
+			/* active state */
+			tp_gpio_id1_pullup: active {
+				drive-strength = <2>; /* 2 mA */
+				bias-pull-up; /*  PULL  UP*/
 			};
-
-			tp_gpio_id1_config_sleep: sleep {
-				drive-strength = <2>;
-				bias-pull-down;
-			};
+			tp_gpio_id1_pulldown: sleep {
+				drive-strength = <2>; /* 2 mA */
+				bias-pull-down; /* PULL DOWN */
+			};			
 		};
-
 		tp_gpio_id2_config {
+			/* MCLK */
 			qcom,pins = <&gp 114>;
 			qcom,num-grp-pins = <1>;
 			qcom,pin-func = <0>;
 			label = "tp_gpio_id2_config";
-
-			tp_gpio_id2_config_active: active {
-				drive-strength = <2>;
-				bias-pull-up;
+			/* active state */
+			tp_gpio_id2_pullup: active {
+				drive-strength = <2>; /* 2 mA */
+				bias-pull-up; /*  PULL  UP*/
 			};
-
-			tp_gpio_id2_config_sleep: sleep {
-				drive-strength = <2>;
-				bias-pull-down;
-			};
+			tp_gpio_id2_pulldown: sleep {
+				drive-strength = <2>; /* 2 mA */
+				bias-pull-down; /* PULL DOWN */
+			};			
 		};
-		
-		tp_gpio_id3_config { 
+		tp_gpio_id3_config {
+			/* MCLK */
 			qcom,pins = <&gp 119>;
 			qcom,num-grp-pins = <1>;
 			qcom,pin-func = <0>;
 			label = "tp_gpio_id3_config";
-
-			tp_gpio_id3_config_active:	active {
-					drive-strength = <2>;
-					bias-pull-up;
+			/* active state */
+			tp_gpio_id3_pullup: active {
+				drive-strength = <2>; /* 2 mA */
+				bias-pull-up; /*  PULL  UP*/
 			};
-
-			tp_gpio_id3_config_sleep:	sleep {
-					drive-strength = <2>;
-					bias-pull-down;
-			};
+			tp_gpio_id3_pulldown: sleep {
+				drive-strength = <2>; /* 2 mA */
+				bias-pull-down; /* PULL DOWN */
+			};			
 		};
 		
 		ext_buck_vsel { 
