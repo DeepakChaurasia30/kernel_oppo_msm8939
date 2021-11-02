@@ -28,8 +28,9 @@
 
 #define QPNP_VIB_DEFAULT_TIMEOUT	15000
 #define QPNP_VIB_DEFAULT_VTG_LVL	3100
-#define QPNP_VIB_DEFAULT_VTG_MAX	3100
-#define QPNP_VIB_DEFAULT_VTG_MIN	1200
+
+#define QPNP_VIB_DEFAULT_VTG_MAX	31
+#define QPNP_VIB_DEFAULT_VTG_MIN	12
 
 #define QPNP_VIB_EN			BIT(7)
 #define QPNP_VIB_VTG_SET_MASK		0x1F
@@ -66,6 +67,10 @@ struct qpnp_vib {
 	int vtg_level;
 	int vtg_default;
 	int timeout;
+#ifdef VENDOR_EDIT
+//Added by Tong.han@Bsp.group.Tp for vib min time setting,2015-07-07-07
+	int time_min;
+#endif/*VENDOR_EDIT*/
 	spinlock_t lock;
 };
 
@@ -287,6 +292,11 @@ retry:
 	else {
 		value = (value > vib->timeout ?
 				 vib->timeout : value);
+#ifdef VENDOR_EDIT
+//Added by Tong.han@Bsp.group.Tp for vib min time setting,2015-07-07-07
+		value = (value < vib->time_min ?
+				 vib->time_min : value);
+#endif/*VENDOR_EDIT*/
 		vib->state = 1;
 		hrtimer_start(&vib->vib_timer,
 			      ktime_set(value / 1000, (value % 1000) * 1000000),
@@ -357,6 +367,18 @@ static int qpnp_vib_parse_dt(struct qpnp_vib *vib)
 		return rc;
 	}
 
+#ifdef VENDOR_EDIT
+//Added by Tong.han@Bsp.group.Tp for vib min time setting,2015-07-07-07
+	rc = of_property_read_u32(spmi->dev.of_node,
+			"qcom,vib-timemin-ms", &temp_val);
+	if (!rc) {
+		vib->time_min = temp_val;
+	} else if (rc != -EINVAL) {
+		dev_err(&spmi->dev, "Unable to read vib time_min\n");
+		vib->time_min = 0;
+	}
+#endif/*VENDOR_EDIT*/
+	
 	vib->vtg_level = QPNP_VIB_DEFAULT_VTG_LVL;
 	rc = of_property_read_u32(spmi->dev.of_node,
 			"qcom,vib-vtg-level-mV", &temp_val);
@@ -367,35 +389,11 @@ static int qpnp_vib_parse_dt(struct qpnp_vib *vib)
 		return rc;
 	}
 
-	vib->vtg_max = QPNP_VIB_DEFAULT_VTG_MAX;
-	rc = of_property_read_u32(spmi->dev.of_node,
-			"qcom,vib-vtg-max-mV", &temp_val);
-	if (!rc) {
-		vib->vtg_max = min(temp_val, (u32)QPNP_VIB_DEFAULT_VTG_MAX);
-	} else if (rc != -EINVAL) {
-		dev_err(&spmi->dev, "Unable to read vtg max level\n");
-		return rc;
-	}
-
-	vib->vtg_min = QPNP_VIB_DEFAULT_VTG_MIN;
-	rc = of_property_read_u32(spmi->dev.of_node,
-			"qcom,vib-vtg-min-mV", &temp_val);
-	if (!rc) {
-		vib->vtg_min = max(temp_val, (u32)QPNP_VIB_DEFAULT_VTG_MIN);
-	} else if (rc != -EINVAL) {
-		dev_err(&spmi->dev, "Unable to read vtg min level\n");
-		return rc;
-	}
-
 	vib->vtg_level /= 100;
-	vib->vtg_min /= 100;
-	vib->vtg_max /= 100;
-	vib->vtg_default = vib->vtg_level;
-
-	if (vib->vtg_level < vib->vtg_min)
-		vib->vtg_level = vib->vtg_min;
-	else if (vib->vtg_level > vib->vtg_max)
-		vib->vtg_level = vib->vtg_max;
+	if (vib->vtg_level < QPNP_VIB_DEFAULT_VTG_MIN)
+		vib->vtg_level = QPNP_VIB_DEFAULT_VTG_MIN;
+	else if (vib->vtg_level > QPNP_VIB_DEFAULT_VTG_MAX)
+		vib->vtg_level = QPNP_VIB_DEFAULT_VTG_MAX;
 
 	vib->mode = QPNP_VIB_MANUAL;
 	rc = of_property_read_string(spmi->dev.of_node, "qcom,mode", &mode);
