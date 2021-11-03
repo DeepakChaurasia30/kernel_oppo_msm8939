@@ -26,6 +26,10 @@
 #include <linux/debugfs.h>
 #include <linux/regulator/onsemi-ncp6335d.h>
 #include <linux/string.h>
+#ifdef VENDOR_EDIT
+/*chaoying.chen@EXP.BaseDrv.charge,2016/05/19 add board id gpio status for 15399 */
+#include <soc/oppo/oppo_project.h>
+#endif /*VENDOR_EDIT*/
 
 /* registers */
 #define REG_NCP6335D_PID		0x03
