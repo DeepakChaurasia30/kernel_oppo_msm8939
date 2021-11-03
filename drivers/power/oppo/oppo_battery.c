@@ -584,6 +584,7 @@ static int opchg_check_charging_full(struct opchg_charger *chip)
 #else
 	opchg_check_charging_pre_full(chip);
 	opchg_check_battovp(chip);
+#endif	
 
     if ((chip->batt_pre_full)||(chip->batt_ovp)) {
         chg_full_count++;
