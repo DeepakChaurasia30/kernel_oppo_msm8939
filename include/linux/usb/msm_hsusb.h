@@ -106,6 +106,13 @@ enum msm_usb_phy_type {
 
 #define IDEV_CHG_MAX	1500
 #define IDEV_CHG_MIN	500
+#ifdef VENDOR_EDIT
+//MoFei@EXP.BaseDrv.charge,2016-2-1 Add for the limit current of USB input ,15399
+#ifndef IDEV_CHG_MIN_15399
+#define IDEV_CHG_MIN_15399	520
+#endif
+
+#endif
 #define IUNIT		100
 
 #define IDEV_ACA_CHG_MAX	1500
