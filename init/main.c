@@ -155,6 +155,18 @@ static int __init set_reset_devices(char *str)
 
 __setup("reset_devices", set_reset_devices);
 
+#ifdef VENDOR_EDIT
+/*chaoying.chen@EXP.BaseDrv.charge,2016/05/19 add board id gpio status for 15399 */
+unsigned int oppo_inside_ldo_status = 0;
+static int __init get_ldo_status(char *str)
+{
+	oppo_inside_ldo_status = 1;
+	pr_err("[%s]oppo_inside_ldo_status= %u \n",__func__, oppo_inside_ldo_status);
+	return 1;
+}
+__setup("inside_ldo", get_ldo_status);
+#endif /*VENDOR_EDIT*/
+
 static const char * argv_init[MAX_INIT_ARGS+2] = { "init", NULL, };
 const char * envp_init[MAX_INIT_ENVS+2] = { "HOME=/", "TERM=linux", NULL, };
 static const char *panic_later, *panic_param;
