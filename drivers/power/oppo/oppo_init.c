@@ -405,6 +405,7 @@ static int opcharger_charger_probe(struct i2c_client *client, const struct i2c_d
 
     mutex_init(&chip->read_write_lock);
     mutex_init(&chip->usbin_lock);/*chaoying.chen@EXP.BaseDrv.charge,2015/08/10 add for USB recognition */
+	mutex_init(&chip->aicl_lock);/*Mofei@EXP.BaseDrv.charge,2016/03/16 add for aicl */
 
 	if(is_project(OPPO_15109)||is_project(OPPO_15399))
 	{

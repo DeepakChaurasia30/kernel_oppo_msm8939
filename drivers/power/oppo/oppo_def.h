@@ -392,6 +392,10 @@ struct opchg_charger {
 	bool							check_stat_again;
 	bool							power_off;
     struct mutex                    usbin_lock; /*chaoying.chen@EXP.BaseDrv.charge,2015/08/10 add for USB recognition */
+	struct mutex                    aicl_lock; /*Mofei@EXP.BaseDrv.charge,2016/03/16 add for aicl */
+	int                             is_lcd_on2off;/*Mofei@EXP.BaseDrv.charge,2016/03/21 add for aicl when lcd is on to off */
+	int                             aicl_in_500_flag;/*Mofei@EXP.BaseDrv.charge,2016/03/23 add for trying aicl when iacl is in 500 at the beginning */
+	bool							shipping_mode;
 	bool							updating_fw_flag;
 };
 

@@ -119,6 +119,8 @@ int opchg_init_charge_parameters(struct opchg_charger *chip)
     chip->g_is_wakeup = -1;
     chip->g_chg_in = -1;
 	chip->opchg_earphone_enable =false;
+    chip->aicl_in_500_flag = 0;/*Mofei@EXP.BaseDrv.charge,2016/03/23 add for trying aicl when iacl is in 500 at the beginning */
+	chip->is_lcd_on2off = 0;/*Mofei@EXP.BaseDrv.charge,2016/03/21 add for aicl when lcd is on to off */
 
     for (i = INPUT_CURRENT_MIN;i <= INPUT_CURRENT_MAX;i++) {
         chip->max_input_current[i] = chip->limit_current_max_ma;
@@ -570,7 +572,16 @@ void opchg_get_battery_ov_status(struct opchg_charger *chip)
 static int opchg_check_charging_full(struct opchg_charger *chip)
 {
     static int chg_full_count = 0,chg_full_total_count = 0,chg_full_fg = 0;
-
+#if 0
+/*#hanqing.wang@EXP.BasicDrv.Audio add for clone 15089 and add the macor MSM_15062 and OPPO_15011 = OPPO_15018*/
+/*huqiao@EXP.BasicDrv.Basic add for clone 15085*/
+	if (is_project(OPPO_15109) || is_project(OPPO_15399) ||
+		(chip->driver_id == OPCHG_BQ24157_ID) || (chip->driver_id == OPCHG_BQ24188_ID))
+    {
+    	opchg_check_charging_pre_full(chip);
+		opchg_check_battovp(chip);
+	}
+#else
 	opchg_check_charging_pre_full(chip);
 	opchg_check_battovp(chip);
 
@@ -1036,9 +1047,15 @@ void opchg_check_lcd_onoff(struct opchg_charger *chip)
 {
 	if(chip->is_lcd_on==true)
 	{
-		if (is_project(OPPO_15109)|| is_project(OPPO_15399))
+		if (is_project(OPPO_15109))
 		{
 			opchg_config_input_chg_current(chip, INPUT_CURRENT_LCD, LCD_ON_CHARGING_INPUT_CURRENT_15109);
+		}
+		else if (is_project(OPPO_15399))
+		{
+			opchg_config_input_chg_current(chip, INPUT_CURRENT_LCD, LCD_ON_CHARGING_INPUT_CURRENT_15399);
+			chip->is_lcd_on2off = 1;/*Mofei@EXP.BaseDrv.charge,2016/03/21 add for aicl when lcd is on to off */
+
 		}
 		else if (is_project(OPPO_15018) || is_project(OPPO_15022)) {
 			opchg_config_input_chg_current(chip, INPUT_CURRENT_LCD, LCD_ON_CHARGING_INPUT_CURRENT_15018);
@@ -1060,9 +1077,22 @@ void opchg_check_lcd_onoff(struct opchg_charger *chip)
 	}
 	else
 	{
-		if (is_project(OPPO_15109)|| is_project(OPPO_15399))
+		if (is_project(OPPO_15109))
 		{
 			opchg_config_input_chg_current(chip, INPUT_CURRENT_LCD, LCD_OFF_CHARGING_INPUT_CURRENT_15109);
+		}
+		else if (is_project(OPPO_15399))
+		{
+			opchg_config_input_chg_current(chip, INPUT_CURRENT_LCD, LCD_OFF_CHARGING_INPUT_CURRENT_15399);
+			#ifdef VENDOR_EDIT
+			/*Mofei@EXP.BaseDrv.charge,2016/03/21 add for aicl when lcd is off  */
+			if(chip->is_lcd_on2off == 1)
+			{
+				chip->is_lcd_on2off = 0;
+				if(chip->chg_present == 1)
+				opchg_set_input_chg_current(chip, chip->max_input_current[INPUT_CURRENT_MIN], true);
+			}
+			#endif  /*VENDOR_EDIT*/
 		}
 		else if (is_project(OPPO_15018) || is_project(OPPO_15022)) {
 			opchg_config_input_chg_current(chip, INPUT_CURRENT_LCD, LCD_OFF_CHARGING_INPUT_CURRENT_15018);
@@ -1392,10 +1422,23 @@ void opchg_aicl_repeatedly(struct opchg_charger *chip)
 		chip->aicl_delay_count = 0;
 		return;
 	}
-
+#ifdef VENDOR_EDIT
+/*Mofei@EXP.BaseDrv.charge,2016/05/05 add for trying aicl when iacl is in 500 at the beginning */
+	if((chip->aicl_in_500_flag == 1) && (chip->aicl_delay_count < OPCHG_AICL_DELAY_15MIN))
+	{
+		chip->aicl_in_500_flag = 0;
+		opchg_set_input_chg_current(chip, chip->max_input_current[INPUT_CURRENT_MIN], true);
+	}
+#endif  /*VENDOR_EDIT*/
+#ifdef VENDOR_EDIT /*Mofei@EXP.BaseDrv.charge,2016/05/05 add for not support aicl repeat */
+	if(is_project(OPPO_15399))
+		return;
+#endif
 	if(chip->aicl_delay_count > OPCHG_AICL_DELAY_15MIN){
 		chip->aicl_delay_count = 0;
 		opchg_set_input_chg_current(chip, chip->max_input_current[INPUT_CURRENT_MIN], true);
+		
+		pr_debug("%s reaicl charger in currrnt=%d\n",__func__,chip->max_input_current[INPUT_CURRENT_MIN]);
 	} else {
 		chip->aicl_delay_count++;
 	}
