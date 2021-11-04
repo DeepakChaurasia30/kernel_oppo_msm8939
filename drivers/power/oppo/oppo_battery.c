@@ -1042,7 +1042,20 @@ void opchg_check_earphone_off(void)
 }
 EXPORT_SYMBOL(opchg_check_earphone_off);
 #endif
-
+#ifdef VENDOR_EDIT
+//MoFei@EXP.BaseDrv.charge,2016-02-29 add for identification of non_standerd battery
+void opchg_check_battery_authen(struct opchg_charger *chip)
+{
+    if(is_project(OPPO_15399))
+    {
+        if(chip->batt_authen == 0)
+		 opchg_config_charging_disable(chip, BATTERY_AUTHENTIC_DISABLE, 1);
+		else if(chip->batt_authen == 1)
+		 opchg_config_charging_disable(chip, BATTERY_AUTHENTIC_DISABLE, 0);
+	}
+	
+}
+#endif  /*VENDOR_EDIT*/
 
 void opchg_check_lcd_onoff(struct opchg_charger *chip)
 {
@@ -1509,7 +1522,10 @@ void opchg_check_status(struct opchg_charger *chip)
 	static int count_debug=0;
 	static int soc_temp = 0;
 	static int soc_bms_temp = 0;
-
+    #ifdef VENDOR_EDIT
+    //MoFei@EXP.BaseDrv.charge,2016-02-29 add for identification of non_standerd battery
+    opchg_check_battery_authen(chip);
+    #endif  /*VENDOR_EDIT*/
 	opchg_check_lcd_onoff(chip);
 	opchg_check_cool_charging_current(chip);
 	opchg_check_camera_onoff(chip);
