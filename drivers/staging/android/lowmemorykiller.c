@@ -369,6 +369,35 @@ void tune_lmk_param(int *other_free, int *other_file, struct shrink_control *sc)
 	}
 }
 
+#ifdef VENDOR_EDIT
+//jiemin.zhu@Swap.Android.Kernel, 2015-05-26, for skip binder context
+static int binder_check(void)
+{
+    char *binder_name = "Binder_";
+
+    if (strncmp(current->comm, binder_name, strlen(binder_name)) == 0) {
+        return 1;
+    }
+
+    return 0;
+}
+#endif
+
+#ifdef VENDOR_EDIT
+//jiemin.zhu@Swap.Android.Kernel, 2015-06-17, modify for 8939/16 5.1 for orphan task
+static void orphan_foreground_task_kill(struct task_struct *task, short adj, short min_score_adj)
+{
+	if (min_score_adj == 0)
+		return;
+
+	if (task->parent->pid == 1 && adj == 0) {
+		lowmem_print(1, "kill orphan foreground task %s, pid %d, adj %hd, min_score_adj %hd\n", 
+					task->comm, task->pid, adj, min_score_adj);
+		send_sig(SIGKILL, task, 0);
+	}
+}
+#endif /* VENDOR_EDIT */
+
 static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 {
 	struct task_struct *tsk;
@@ -466,9 +495,30 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		if (!p)
 			continue;
 
+#ifdef VENDOR_EDIT
+//Jiemin.Zhu@Swdp.Android.Stability.Memory, 2016/01/06, add for D status process issue
+		if (p->state & TASK_UNINTERRUPTIBLE) {
+			task_unlock(p);
+			continue;
+		}
+		//resolve kill coredump process, it may continue long time
+		if (p->signal != NULL && (p->signal->flags & SIGNAL_GROUP_COREDUMP) ){
+			task_unlock(p);
+			continue;
+		}
+#endif /* VENDOR_EDIT */
 		oom_score_adj = p->signal->oom_score_adj;
 		if (oom_score_adj < min_score_adj) {
+#ifdef VENDOR_EDIT
+//jiemin.zhu@Swap.Android.Kernel, 2015-06-17, modify for 8939/16 5.1 for orphan task
+			tasksize = get_mm_rss(p->mm);
+#endif /* VENDOR_EIDT */
 			task_unlock(p);
+#ifdef VENDOR_EDIT
+//jiemin.zhu@Swap.Android.Kernel, 2015-06-17, modify for 8939/16 5.1 for orphan task
+			if (tasksize > 0)
+				orphan_foreground_task_kill(p, oom_score_adj, min_score_adj);
+#endif /* VENDOR_EIDT */
 			continue;
 		}
 		tasksize = get_mm_rss(p->mm);
@@ -488,7 +538,11 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		lowmem_print(3, "select '%s' (%d), adj %hd, size %d, to kill\n",
 			     p->comm, p->pid, oom_score_adj, tasksize);
 	}
+#ifdef VENDOR_EDIT
+    if (!binder_check() && selected) {
+#else	
 	if (selected) {
+#endif /* VENDOR_EDIT */
 		lowmem_print(1, "Killing '%s' (%d), adj %hd,\n" \
 				"   to free %ldkB on behalf of '%s' (%d) because\n" \
 				"   cache %ldkB is below limit %ldkB for oom_score_adj %hd\n" \
