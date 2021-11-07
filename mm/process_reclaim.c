@@ -181,7 +181,11 @@ static void swap_fn(struct work_struct *work)
 
 	rcu_read_unlock();
 
-	while (si--) {
+#ifdef VENDOR_EDIT
+/* fanhui@PhoneSW.BSP, 2015/09/15, fix the memory leakage of task_struct */
+	si--;
+	while (si>=0) {
+#endif
 		nr_to_reclaim =
 			(selected[si].tasksize * per_swap_size) / total_sz;
 		/* scan atleast a page */
@@ -197,6 +201,10 @@ static void swap_fn(struct work_struct *work)
 		total_scan += rp.nr_scanned;
 		total_reclaimed += rp.nr_reclaimed;
 		put_task_struct(selected[si].p);
+#ifdef VENDOR_EDIT
+/* fanhui@PhoneSW.BSP, 2015/09/15, fix the memory leakage of task_struct */
+		si--;
+#endif
 	}
 
 	if (total_scan) {
