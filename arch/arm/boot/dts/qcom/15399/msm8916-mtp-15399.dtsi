@@ -224,12 +224,9 @@
 			vcc_i2c_opcharger-supply = <&pm8916_l5>;
 			
 			qcom,irq-gpio = <&msm_gpio 62 0x00>;
-			//qcom,usbin-switch-gpio = <&pm8916_gpios 3 0>;
-
 			
 			qcom,disable-apsd;
 			qcom,using-pmic-therm;
-			//qcom,bms-controlled-charging;
 			qcom,charger-inhibit-disabled;
 			qcom,bms-psy-name = "bms";
 			qcom,chg-vadc = <&pm8916_vadc>;
@@ -238,8 +235,8 @@
 			qcom,iterm-ma = <130>;									/*Charge termination current*/
 			qcom,recharge-mv = <200>;							
 			qcom,fast-charger-project-sign= <0>;					
-			qcom,fastchg-current-max-ma = <1500>;					
-			qcom,input-current-max-ma = <1500>;				
+			qcom,fastchg-current-max-ma = <1250>;					
+			qcom,input-current-max-ma = <1250>;				
 			qcom,float-voltage-mv = <4370>;
 
 			qcom,hot_bat_decidegc = <530>;							/* hot battery temperature in decidegC = 53*/
@@ -248,7 +245,7 @@
 
 			qcom,warm_bat_decidegc = <450>;							/* Warm battery temperature in decidegC= 43*/
 			qcom,temp_warm_vfloat_mv = <4370>;						/* warn battery temperature cutoff voltage =4.1V (5~45)*/
-			qcom,temp_warm_fastchg_current_ma = <1500>;				/* warn battery temperature fast current   =0.75A (5~45)*/
+			qcom,temp_warm_fastchg_current_ma = <1250>;				/* warn battery temperature fast current   =0.75A (5~45)*/
 
 			qcom,pre_normal_bat_decidegc = <220>;						/* pre_cool battery temperature in decidegC= 22*/	
 			qcom,temp_pre_normal_vfloat_mv = <4370>;						/* warn battery temperature cutoff voltage =4.1V (5~45)*/
@@ -270,10 +267,6 @@
 			qcom,bat_present_decidegc = <200>;						/* battery decidegc temperature in decidegC= -20*/
 			qcom,non_standard_vfloat_mv = <4000>;
 			qcom,non_standard_fastchg_current_ma = <512>;
-
-			//qcom,batt-id-gpio = <&msm_gpio 49 0x00>;
-			//pinctrl-names = "default";
-			//pinctrl-0 = <&batt_id_on>;
 	
 			regulator-name = "bq24196_otg_vreg";
 		};
