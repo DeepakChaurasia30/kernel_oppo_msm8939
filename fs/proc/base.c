@@ -966,10 +966,7 @@ static ssize_t oom_adj_write(struct file *file, const char __user *buf,
 			task->cred->uid, oom_adj);
 
 	task_lock(task);
-	if (!task->mm) {
-		err = -EINVAL;
-		goto err_task_lock;
-	}
+
 
 	if (!lock_task_sighand(task, &flags)) {
 		err = -ESRCH;
