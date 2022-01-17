@@ -3569,8 +3569,22 @@ static int set_battery_data(struct qpnp_bms_chip *chip)
 				return -EINVAL;
 			}
 		}
-	} else {
-		node = of_find_node_by_name(chip->spmi->dev.of_node,
+	} else if (is_project(OPPO_15399)) { 
+	        rc = opchg_get_bq2022_manufacture_id();
+		if(rc < 0){
+			pr_err("%s get bq2022 manu id fail\n",__func__);
+			return -EPROBE_DEFER;
+		} else if(rc == BATTERY_2550MAH_ATL)
+		{
+			node = of_find_node_by_name(chip->spmi->dev.of_node,
+						"qcom,battery-data-high-atl");
+			if (!node) {
+				pr_err("No available high-atl batterydata\n");
+				return -EINVAL;
+				}
+			} 
+                } else {
+               node = of_find_node_by_name(chip->spmi->dev.of_node,
 					"qcom,battery-data");
 		if (!node) {
 			pr_err("No available batterydata\n");
