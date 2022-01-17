@@ -99,7 +99,7 @@ static void opchg_external_power_changed(struct power_supply *psy)
 	}
 
     opchg_set_enable_volatile_writes(chip);
-	opchg_config_input_chg_current(chip, INPUT_CURRENT_LCD, chip->limit_current_max_ma);
+ 	opchg_config_input_chg_current(chip, INPUT_CURRENT_LCD, chip->limit_current_max_ma);
 	opchg_config_input_chg_current(chip, INPUT_CURRENT_CAMERA, chip->limit_current_max_ma);
     opchg_config_input_chg_current(chip, INPUT_CURRENT_BY_POWER, current_limit);
 
@@ -407,7 +407,7 @@ int opchg_battery_set_property(struct power_supply *psy,
 			opchg_config_charging_disable(chip, FACTORY_MODE_DISABLE, 1);
 		}
         break;
-
+		
     default:
         return -EINVAL;
     }
@@ -656,8 +656,8 @@ int opchg_battery_get_property(struct power_supply *psy,
 		case POWER_SUPPLY_PROP_POWER_OFF:
 			val->intval = 0;
 			break;
-
-	    default:
+  
+      default:
 	        return -EINVAL;
 	}
 	return 0;
