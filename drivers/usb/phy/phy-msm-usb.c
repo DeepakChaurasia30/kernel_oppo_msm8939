@@ -3365,6 +3365,9 @@ static void msm_otg_sm_work(struct work_struct *w)
 					else if (is_project(OPPO_15109))
 						msm_otg_notify_charger(motg,
 								IDEV_CHG_MIN);
+//MoFei@EXP.BaseDrv.charge,2016-2-1 Add for the limit current of USB input ,15399
+					else if (is_project(OPPO_15399))
+						msm_otg_notify_charger(motg, 520);
 					else
 #endif
 					msm_otg_notify_charger(motg,
