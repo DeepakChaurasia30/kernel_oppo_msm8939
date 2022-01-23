@@ -6,6 +6,7 @@
 #define TP_TPK 2
 #define TP_TRULY 3
 #define TP_OFILM 4
+#define TP_BIEL 5
 #define TP_TEST_ENABLE 1
 
 #define DiagonalUpperLimit  1100
