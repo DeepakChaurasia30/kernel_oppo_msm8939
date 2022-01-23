@@ -58,6 +58,10 @@
 
 #include "mdss_livedisplay.h"
 
+#ifdef CONFIG_MACH_OPPO
+#include <soc/oppo/oppo_project.h>
+#endif 
+
 #ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
 #define MDSS_FB_NUM 3
 #else
@@ -1312,6 +1316,11 @@ static int mdss_fb_start_disp_thread(struct msm_fb_data_type *mfd)
 
 	return ret;
 }
+
+#ifdef CONFIG_MACH_OPPO
+/* Xiaori.Yuan@Mobile Phone Software Dept.Driver, 2015/01/09  Add for 14045 esd */
+static bool panel_dead = 0;
+#endif
 
 static void mdss_fb_stop_disp_thread(struct msm_fb_data_type *mfd)
 {
