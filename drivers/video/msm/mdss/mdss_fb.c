@@ -1163,6 +1163,11 @@ static void mdss_fb_scale_bl(struct msm_fb_data_type *mfd, u32 *bl_lvl)
 	(*bl_lvl) = temp;
 }
 
+#ifdef CONFIG_MACH_OPPO
+/* Xiaori.Yuan@Mobile Phone Software Dept.Driver, 2015/04/10  Add for esd */
+static int save_bl = 0;
+#endif
+
 /* must call this function from within mfd->bl_lock */
 void mdss_fb_set_backlight(struct msm_fb_data_type *mfd, u32 bkl_lvl)
 {
@@ -1425,6 +1430,11 @@ static int mdss_fb_blank_unblank(struct msm_fb_data_type *mfd)
 				mdss_fb_set_backlight(mfd, mfd->calib_mode_bl);
 			else if (!mfd->panel_info->mipi.post_init_delay)
 				mdss_fb_set_backlight(mfd, mfd->unset_bl_level);
+                        else if (is_project(OPPO_15399)) {
+				panel_dead = false;
+				mdss_fb_set_backlight(mfd, save_bl);
+                           }
+
 
 			/*
 			 * it blocks the backlight update between unblank and
