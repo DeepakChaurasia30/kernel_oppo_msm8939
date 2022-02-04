@@ -170,7 +170,7 @@ static ssize_t ts4621_proc_read_status(struct file *file, char __user *buf, size
     if (len > *pos)
     {
         len -= *pos;
-    }    
+    }
     else
     {
         len = 0;
@@ -186,21 +186,21 @@ static ssize_t ts4621_proc_set_reg(struct file *file, const char __user *buf, si
 	int val = 0;
 	int read = 0;
 	char tmp[10] = {0};
-    
-    
+
+
 	read = copy_from_user(tmp, buf, count);
     read = sscanf(tmp, "0x%x,0x%x", &reg, &val);
 	if (read)
-	{    
+	{
 	    ts4621_reg_write(reg, val);
 		pr_info("%s reg = 0x%x, val = 0x%x, read = %d\n", __func__, reg, val, read);
-	}    
-	else 
-	{    
+	}
+	else
+	{
 		pr_info("%s fail!!\n", __func__);
-	}    
+	}
 
-	return count; 
+	return count;
 }
 
 /*static ssize_t ts4621_proc_get_reg(struct file *file, const char __user *buf, size_t count, loff_t *ppos)
@@ -212,16 +212,16 @@ static ssize_t ts4621_proc_set_reg(struct file *file, const char __user *buf, si
 
 	copy_from_user(tmp, buf, count);
 	if (read = sscanf(tmp, "%x", &reg))
-	{    
+	{
 	    ts4621_ReadReg(reg, &val);
 		AUDIO_DBG("%s reg = 0x%x, val = 0x%x, read = %d\n", __func__, reg, val, read);
-	}    
-	else 
-	{    
+	}
+	else
+	{
 		AUDIO_DBG("%s fail!!\n", __func__);
-	}    
+	}
 
-	return count; 
+	return count;
 }*/
 
 static struct proc_file proc_file_st[] = {
@@ -249,7 +249,7 @@ static int ts4621_init_reg(void){
 
     iResult = ts4621_reg_write(0x01, 0x01);//path disable and I2C disable
     iResult |= ts4621_reg_write(0x02, 0xC0);//mute and set volume -64dB
-    iResult |= ts4621_reg_write(0x03, 0x00);//clear flag 
+    iResult |= ts4621_reg_write(0x03, 0x00);//clear flag
 
     if(iResult)
     {
@@ -277,7 +277,7 @@ static int  ts4621_probe(struct i2c_client *client,
 	err = ts4621_init_reg();
     ts4621_create_proc();// addf for debug
     pr_err("exit %s err = %d", __func__, err);
-	return err; 
+	return err;
 }
 
 void  ts4621_amp_on(int on, u8 gain)
@@ -294,7 +294,7 @@ void  ts4621_amp_on(int on, u8 gain)
         iResult |= ts4621_reg_write(0x02, 0xc0);//mute and set volume
         iResult |= ts4621_reg_read(0x01, &cValue);
         cTemp = cValue | 0xc0;
-        iResult |= ts4621_reg_write(0x01, cTemp);//path enable 
+        iResult |= ts4621_reg_write(0x01, cTemp);//path enable
         iResult |= ts4621_reg_write(0x02, gain);
         if(iResult)
         {
@@ -338,7 +338,7 @@ void  ts4621_amp_on_hph_speaker(int on, u8 gain)
         iResult |= ts4621_i2c_write(0x03, cTemp);//clear flag
         iResult |= ts4621_reg_read(0x01, &cValue);
         cTemp = cValue | 0xc0;
-        iResult |= ts4621_i2c_write(0x01, cTemp);//path enable 
+        iResult |= ts4621_i2c_write(0x01, cTemp);//path enable
         iResult |= ts4621_i2c_write(0x02, gain);
         if(iResult)
         {
@@ -369,7 +369,7 @@ void  ts4621_amp_on_hph_speaker(int on, u8 gain)
     return;
 }
 /*OPPO 2015-06-12 zhangping Add for short sound clear end*/
-#ifdef VENDOR_EDIT
+
 //John.Xu@PhoneSw.AudioDriver, 2015/04/21, Add for MMI test
 void  ts4621_amp_on_l(int on, u8 gain)
 {
@@ -385,7 +385,7 @@ void  ts4621_amp_on_l(int on, u8 gain)
         iResult |= ts4621_reg_write(0x02, 0xc0);//mute and set volume
         iResult |= ts4621_reg_read(0x01, &cValue);
         cTemp = cValue | 0xc0;
-        iResult |= ts4621_reg_write(0x01, cTemp);//path enable 
+        iResult |= ts4621_reg_write(0x01, cTemp);//path enable
         iResult |= ts4621_reg_read(0x02, &cValue);
         pr_err("ts4621_amp_on_l cValue: 0x%x", cValue);
         cValue = cValue & 0x40;
@@ -410,7 +410,7 @@ void  ts4621_amp_on_l(int on, u8 gain)
 
         iResult |= ts4621_reg_read(0x01, &cValue);
         cTemp = (cValue & ~0x80);
-        iResult |= ts4621_reg_write(0x01, cTemp);//hpl path
+        iResult |= ts4621_reg_write(0x01, cTemp);
         pr_err("ts4621_amp_on_l cTemp: 0x%x", cTemp);
         if(iResult)
         {
@@ -472,10 +472,6 @@ void  ts4621_amp_on_r(int on, u8 gain)
     }
     return;
 }
-#endif /* VENDOR_EDIT */
-
-
-
 
 void ts4621_get_gain(u8 *value)
 {
@@ -546,19 +542,11 @@ static struct i2c_driver ts4621_driver = {
 static int __init ts4621_init(void)
 {
     pr_err("zp Enter %s", __func__);
-	if(is_project(OPPO_15009) || is_project(OPPO_15035)|| is_project(OPPO_15037)||is_project(OPPO_15029)||is_project(OPPO_15109)||is_project(OPPO_15399))
+	if(is_project(OPPO_15109))
 	{
-		if (is_project(OPPO_15035)||is_project(OPPO_15109)||is_project(OPPO_15399))
-		{
-			// For 15035 ,2dB
-			DEFAULT_GAIN = 0x3A;
-		}
-		else 
-		{
-			// Other 1dB
-			DEFAULT_GAIN = 0x38;
-		}
-	
+		// For 15035 ,2dB
+		DEFAULT_GAIN = 0x3A;
+
 		return i2c_add_driver(&ts4621_driver);
 	}
 	else
@@ -571,7 +559,7 @@ static int __init ts4621_init(void)
 static void __exit ts4621_exit(void)
 {
     pr_err("Enter %s", __func__);
-	if(is_project(OPPO_15009) || is_project(OPPO_15035) || is_project(OPPO_15037)||is_project(OPPO_15029)||is_project(OPPO_15109)||is_project(OPPO_15399))
+	if(is_project(OPPO_15109))
 	{
 		i2c_del_driver(&ts4621_driver);
 	}

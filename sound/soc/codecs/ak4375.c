@@ -29,10 +29,6 @@
 
 
 #include "ak4375.h"
-#ifdef VENDOR_EDIT
-//John.Xu@PhoneSw.AudioDriver, 2016/05/11, Add for one MM Key log
-#include <soc/oppo/mmkey_log.h>
-#endif /* VENDOR_EDIT */
 
 //#define AK4375_DEBUG			//used at debug mode
 //#define AK4375_CONTIF_DEBUG		//used at debug mode
@@ -193,7 +189,7 @@ static const struct soc_enum ak4375_dac_enum[] = {
 	SOC_ENUM_SINGLE(AK4375_04_OUTPUT_MODE_SETTING, 1,
 			ARRAY_SIZE(ak4375_hphr_select_texts), ak4375_hphr_select_texts),
     SOC_ENUM_SINGLE(AK4375_06_DIGITAL_FILTER_SELECT, 6,
-    		ARRAY_SIZE(ak4375_dacfil_select_texts), ak4375_dacfil_select_texts), 
+		ARRAY_SIZE(ak4375_dacfil_select_texts), ak4375_dacfil_select_texts),
 	SOC_ENUM_SINGLE(AK4375_09_JITTER_CLEANER_SETTING2, 4,
 			ARRAY_SIZE(ak4375_srcfil_select_texts), ak4375_srcfil_select_texts),
 };
@@ -205,18 +201,18 @@ static const char *srcoutfs_on_select[] =
 	{"48kHz", "96kHz", "192kHz"};
 #else
 	{"44.1kHz", "88.2kHz", "176.4kHz"};
-#endif	
+#endif
 
 static const char *pllmode_on_select[] = {"OFF", "ON"};
 static const char *smtcycle_on_select[] = {"1024", "2048", "4096", "8192"};
 static const char *dfsrc8fs_on_select[] = {"Digital Filter", "Bypass", "8fs mode"};
 
 static const struct soc_enum ak4375_bitset_enum[] = {
-    SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(bickfreq_on_select), bickfreq_on_select), 
-    SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(srcoutfs_on_select), srcoutfs_on_select), 
-    SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(pllmode_on_select), pllmode_on_select), 
-    SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(smtcycle_on_select), smtcycle_on_select), 
-    SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(dfsrc8fs_on_select), dfsrc8fs_on_select), 
+    SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(bickfreq_on_select), bickfreq_on_select),
+    SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(srcoutfs_on_select), srcoutfs_on_select),
+    SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(pllmode_on_select), pllmode_on_select),
+    SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(smtcycle_on_select), smtcycle_on_select),
+    SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(dfsrc8fs_on_select), dfsrc8fs_on_select),
 };
 
 
@@ -239,7 +235,7 @@ static int ak4375_set_bickfs(struct snd_soc_codec *codec)
 {
 	struct ak4375_priv *ak4375 = snd_soc_codec_get_drvdata(codec);
 
-	if ( ak4375->nBickFreq == 0 ) { 	//32fs
+	if ( ak4375->nBickFreq == 0 ) {		//32fs
 		ak4375_writeMask(codec, AK4375_15_AUDIO_IF_FORMAT, 0x03, 0x01);	//DL1-0=01(16bit, >=32fs)
 	}
 	else if( ak4375->nBickFreq == 1 ) {	//48fs
@@ -248,7 +244,7 @@ static int ak4375_set_bickfs(struct snd_soc_codec *codec)
 	else if( ak4375->nBickFreq == 2 ) {								//64fs
 		ak4375_writeMask(codec, AK4375_15_AUDIO_IF_FORMAT, 0x02, 0x02);	//DL1-0=1x(32bit, >=64fs)
 	}
-	
+
 	return 0;
 }
 
@@ -258,11 +254,11 @@ struct snd_ctl_elem_value  *ucontrol)
 {
     struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
 	struct ak4375_priv *ak4375 = snd_soc_codec_get_drvdata(codec);
-    
+
 	ak4375->nBickFreq = ucontrol->value.enumerated.item[0];
 
 	ak4375_set_bickfs(codec);
-	
+
     return 0;
 }
 
@@ -284,7 +280,7 @@ struct snd_ctl_elem_value  *ucontrol)
 {
     struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
 	struct ak4375_priv *ak4375 = snd_soc_codec_get_drvdata(codec);
-    
+
 	ak4375->nSrcOutFsSel = ucontrol->value.enumerated.item[0];
 
     return 0;
@@ -308,7 +304,7 @@ struct snd_ctl_elem_value  *ucontrol)
 //{
 //    struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
 //	struct ak4375_priv *ak4375 = snd_soc_codec_get_drvdata(codec);
-//    
+//
 //	ak4375->nSmt = ucontrol->value.enumerated.item[0];
 //
 //	//0:1024, 1:2048, 2:4096, 3:8192
@@ -335,15 +331,15 @@ static int ak4375_set_dfsrc8fs(struct snd_soc_codec *codec)
 
 	switch (ak4375->dfsrc8fs) {
 	case 0:		//DAC Filter
-		ak4375_writeMask(codec, AK4375_06_DIGITAL_FILTER_SELECT, 0x08, 0x00); 	//DFTHR=0
+		ak4375_writeMask(codec, AK4375_06_DIGITAL_FILTER_SELECT, 0x08, 0x00);	//DFTHR=0
 		ak4375_writeMask(codec, AK4375_0A_JITTER_CLEANER_SETTING3, 0x20, 0x00); //SRCO8FS=0
 		break;
 	case 1:		//Bypass
-		ak4375_writeMask(codec, AK4375_06_DIGITAL_FILTER_SELECT, 0x08, 0x08); 	//DFTHR=1
+		ak4375_writeMask(codec, AK4375_06_DIGITAL_FILTER_SELECT, 0x08, 0x08);	//DFTHR=1
 		ak4375_writeMask(codec, AK4375_0A_JITTER_CLEANER_SETTING3, 0x20, 0x00); //SRCO8FS=0
 		break;
 	case 2:		//8fs mode
-		ak4375_writeMask(codec, AK4375_06_DIGITAL_FILTER_SELECT, 0x08, 0x08); 	//DFTHR=1
+		ak4375_writeMask(codec, AK4375_06_DIGITAL_FILTER_SELECT, 0x08, 0x08);	//DFTHR=1
 		ak4375_writeMask(codec, AK4375_0A_JITTER_CLEANER_SETTING3, 0x20, 0x20); //SRCO8FS=1
 		break;
 	}
@@ -356,7 +352,7 @@ struct snd_ctl_elem_value  *ucontrol)
 {
     struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
 	struct ak4375_priv *ak4375 = snd_soc_codec_get_drvdata(codec);
-    
+
 	ak4375->dfsrc8fs = ucontrol->value.enumerated.item[0];
 
 	ak4375_set_dfsrc8fs(codec);
@@ -366,12 +362,12 @@ struct snd_ctl_elem_value  *ucontrol)
 
 #ifdef AK4375_DEBUG
 
-static const char *test_reg_select[]   = 
+static const char *test_reg_select[]   =
 {
     "read AK4375 Reg 00:24",
 };
 
-static const struct soc_enum ak4375_enum[] = 
+static const struct soc_enum ak4375_enum[] =
 {
     SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(test_reg_select), test_reg_select),
 };
@@ -421,12 +417,12 @@ static const struct snd_kcontrol_new ak4375_snd_controls[] = {
 	SOC_SINGLE_TLV("AK4375 HP-Amp Analog Volume",
 			AK4375_0D_HP_VOLUME_CONTROL, 0, 0x1F, 0, hpg_tlv),
 
-	SOC_ENUM("AK4375 Digital Volume Control", ak4375_dac_enum[0]), 
-	SOC_ENUM("AK4375 DACL Signal Level", ak4375_dac_enum[1]), 
-	SOC_ENUM("AK4375 DACR Signal Level", ak4375_dac_enum[2]), 
-	SOC_ENUM("AK4375 DACL Signal Invert", ak4375_dac_enum[3]), 
-	SOC_ENUM("AK4375 DACR Signal Invert", ak4375_dac_enum[4]), 
-	SOC_ENUM("AK4375 Charge Pump Mode", ak4375_dac_enum[5]), 
+	SOC_ENUM("AK4375 Digital Volume Control", ak4375_dac_enum[0]),
+	SOC_ENUM("AK4375 DACL Signal Level", ak4375_dac_enum[1]),
+	SOC_ENUM("AK4375 DACR Signal Level", ak4375_dac_enum[2]),
+	SOC_ENUM("AK4375 DACL Signal Invert", ak4375_dac_enum[3]),
+	SOC_ENUM("AK4375 DACR Signal Invert", ak4375_dac_enum[4]),
+	SOC_ENUM("AK4375 Charge Pump Mode", ak4375_dac_enum[5]),
 	SOC_ENUM("AK4375 HPL Power-down Resistor", ak4375_dac_enum[6]),
 	SOC_ENUM("AK4375 HPR Power-down Resistor", ak4375_dac_enum[7]),
 	SOC_ENUM("AK4375 DAC Digital Filter Mode", ak4375_dac_enum[8]),
@@ -458,7 +454,7 @@ static int ak4375_set_PLL_MCKI(struct snd_soc_codec *codec, int pll)
 		PLMbit = 40 - 1;
 		MDIVbit = 1 - 1;
 		DIVbit = 1;
-		
+
 		//PLD15-0
 		snd_soc_write(codec, AK4375_0F_PLL_REF_CLK_DIVIDER1, ((PLDbit & 0xFF00) >> 8));
 		snd_soc_write(codec, AK4375_10_PLL_REF_CLK_DIVIDER2, ((PLDbit & 0x00FF) >> 0));
@@ -482,14 +478,14 @@ static int ak4375_set_PLL_MCKI(struct snd_soc_codec *codec, int pll)
 		ak4375_writeMask(codec, AK4375_00_POWER_MANAGEMENT1, 0x01, 0x00);	//PMPLL=0
 		ak4375_data->nPllMCKI=0;
 	}
-	
+
 	return 0;
 }
 #endif
 /*OPPO 2014-08-22 zhzhyon Delete end*/
 
 /* DAC control */
-static int ak4375_dac_event2(struct snd_soc_codec *codec, int event) 
+static int ak4375_dac_event2(struct snd_soc_codec *codec, int event)
 {
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:	/* before widget power up */
@@ -520,11 +516,11 @@ static int ak4375_dac_event(struct snd_soc_dapm_widget *w,
 		struct snd_kcontrol *kcontrol, int event) //CONFIG_LINF
 {
 	struct snd_soc_codec *codec = w->codec;
-	
+
 	akdbgprt("\t[AK4375] %s(%d)\n",__FUNCTION__,__LINE__);
 
 	ak4375_dac_event2(codec, event);
-	
+
 	return 0;
 }
 
@@ -541,22 +537,22 @@ static const struct snd_kcontrol_new ak4375_seldain_mux_control =
 
 /* HPL Mixer */
 static const struct snd_kcontrol_new ak4375_hpl_mixer_controls[] = {
-	SOC_DAPM_SINGLE("LDACL", AK4375_07_DAC_MONO_MIXING, 0, 1, 0), 
-	SOC_DAPM_SINGLE("RDACL", AK4375_07_DAC_MONO_MIXING, 1, 1, 0), 
+	SOC_DAPM_SINGLE("LDACL", AK4375_07_DAC_MONO_MIXING, 0, 1, 0),
+	SOC_DAPM_SINGLE("RDACL", AK4375_07_DAC_MONO_MIXING, 1, 1, 0),
 };
 
 /* HPR Mixer */
 static const struct snd_kcontrol_new ak4375_hpr_mixer_controls[] = {
-	SOC_DAPM_SINGLE("LDACR", AK4375_07_DAC_MONO_MIXING, 4, 1, 0), 
-	SOC_DAPM_SINGLE("RDACR", AK4375_07_DAC_MONO_MIXING, 5, 1, 0), 
+	SOC_DAPM_SINGLE("LDACR", AK4375_07_DAC_MONO_MIXING, 4, 1, 0),
+	SOC_DAPM_SINGLE("RDACR", AK4375_07_DAC_MONO_MIXING, 5, 1, 0),
 };
 
 
 /* ak4375 dapm widgets */
 static const struct snd_soc_dapm_widget ak4375_dapm_widgets[] = {
 // DAC
-	SND_SOC_DAPM_DAC_E("AK4375 DAC", "NULL", AK4375_02_POWER_MANAGEMENT3, 0, 0, 
-			ak4375_dac_event, (SND_SOC_DAPM_POST_PMU |SND_SOC_DAPM_PRE_PMD 
+	SND_SOC_DAPM_DAC_E("AK4375 DAC", "NULL", AK4375_02_POWER_MANAGEMENT3, 0, 0,
+			ak4375_dac_event, (SND_SOC_DAPM_POST_PMU |SND_SOC_DAPM_PRE_PMD
                             |SND_SOC_DAPM_PRE_PMU |SND_SOC_DAPM_POST_PMD)),
 
 #ifdef PLL_BICK_MODE
@@ -573,17 +569,17 @@ static const struct snd_soc_dapm_widget ak4375_dapm_widgets[] = {
 	SND_SOC_DAPM_OUTPUT("AK4375 HPL"),
 	SND_SOC_DAPM_OUTPUT("AK4375 HPR"),
 
-	SND_SOC_DAPM_MIXER("AK4375 HPR Mixer", AK4375_03_POWER_MANAGEMENT4, 1, 0, 
+	SND_SOC_DAPM_MIXER("AK4375 HPR Mixer", AK4375_03_POWER_MANAGEMENT4, 1, 0,
 			&ak4375_hpr_mixer_controls[0], ARRAY_SIZE(ak4375_hpr_mixer_controls)),
 
-	SND_SOC_DAPM_MIXER("AK4375 HPL Mixer", AK4375_03_POWER_MANAGEMENT4, 0, 0, 
+	SND_SOC_DAPM_MIXER("AK4375 HPL Mixer", AK4375_03_POWER_MANAGEMENT4, 0, 0,
 			&ak4375_hpl_mixer_controls[0], ARRAY_SIZE(ak4375_hpl_mixer_controls)),
 
 };
 
-static const struct snd_soc_dapm_route ak4375_intercon[] = 
+static const struct snd_soc_dapm_route ak4375_intercon[] =
 {
-	
+
 #ifdef PLL_BICK_MODE
 	{"AK4375 DAC", "NULL", "AK4375 PLL"},
 #endif
@@ -617,7 +613,7 @@ static int ak4375_set_mcki(struct snd_soc_codec *codec, int fs, int rclk)
 
 		mode = snd_soc_read(codec, AK4375_05_CLOCK_MODE_SELECT);
 		mode &= ~AK4375_CM;
-		
+
 		if (ak4375_data->nSeldain == 0) {	//SRC Bypass Mode
 			switch (mcki_rate) {
 			case 128:
@@ -666,9 +662,9 @@ static int ak4375_set_mcki(struct snd_soc_codec *codec, int fs, int rclk)
 			}
 		}
 		snd_soc_write(codec, AK4375_05_CLOCK_MODE_SELECT, mode);
-		
+
 	}
-	
+
 	return 0;
 }
 
@@ -708,7 +704,7 @@ static int ak4375_set_src_mcki(struct snd_soc_codec *codec, int fs)
 	default:
 		return -EINVAL;
 	}
-	
+
 	oclk_rate = XTAL_OSC_FS/src_out_fs;
 	switch (oclk_rate) {
 	case 128:
@@ -729,7 +725,7 @@ static int ak4375_set_src_mcki(struct snd_soc_codec *codec, int fs)
 
 	ak4375_data->fs2 = src_out_fs;
 	snd_soc_write(codec, AK4375_08_JITTER_CLEANER_SETTING1, nrate);
-	
+
 	return 0;
 }
 
@@ -739,32 +735,32 @@ static int ak4375_set_pllblock(struct snd_soc_codec *codec, int fs)
 	int nMClk, nPLLClk, nRefClk;
 	int PLDbit, PLMbit, MDIVbit, DIVbit;
 	int nTemp;
-	
+
 	mode = snd_soc_read(codec, AK4375_05_CLOCK_MODE_SELECT);
 	mode &= ~AK4375_CM;
-	
-	if (ak4375_data->nSeldain == 0) 
+
+	if (ak4375_data->nSeldain == 0)
 	{	//SRC bypass
-		if ( fs <= 24000 ) 
+		if ( fs <= 24000 )
 		{
 			mode |= AK4375_CM_1;
 			nMClk = 512 * fs;
 		}
-		else if ( fs <= 96000 ) 
+		else if ( fs <= 96000 )
 		{
 			mode |= AK4375_CM_0;
 			nMClk = 256 * fs;
 		}
-		else 
+		else
 		{
 			mode |= AK4375_CM_3;
 			nMClk = 128 * fs;
 		}
 	}
-	else 
-	{								
+	else
+	{
 		//SRC
-		if ( fs <= 24000 ) 
+		if ( fs <= 24000 )
 		{
 			mode |= AK4375_CM_1;
 			nMClk = 512 * fs;
@@ -775,34 +771,34 @@ static int ak4375_set_pllblock(struct snd_soc_codec *codec, int fs)
 		}
 	}
 	snd_soc_write(codec, AK4375_05_CLOCK_MODE_SELECT, mode);
-	
-	if ( (fs % 8000) == 0 ) 
+
+	if ( (fs % 8000) == 0 )
 	{
 		nPLLClk = 122880000;
 	}
-	else if ( (fs == 11025 ) && ( ak4375_data->nBickFreq == 1 )) 
+	else if ( (fs == 11025 ) && ( ak4375_data->nBickFreq == 1 ))
 	{
 		nPLLClk = 101606400;
 	}
-	else 
+	else
 	{
 		nPLLClk = 112896000;
 	}
 
-	if ( ak4375_data->nBickFreq == 0 ) 
+	if ( ak4375_data->nBickFreq == 0 )
 	{		//32fs
 		if ( fs <= 96000 ) PLDbit = 1;
 		else PLDbit = 2;
 		nRefClk = 32 * fs / PLDbit;
 	}
-	else if ( ak4375_data->nBickFreq == 1 ) 
+	else if ( ak4375_data->nBickFreq == 1 )
 	{	//48fs
 		if ( fs <= 16000 ) PLDbit = 1;
 		else PLDbit = 3;
 		nRefClk = 48 * fs / PLDbit;
 	}
-	else 
-	{  									// 64fs
+	else
+	{									// 64fs
 		if ( fs <= 48000 ) PLDbit = 1;
 		else if ( fs <= 96000 ) PLDbit = 2;
 		else PLDbit = 4;
@@ -810,18 +806,18 @@ static int ak4375_set_pllblock(struct snd_soc_codec *codec, int fs)
 	}
 
 	PLMbit = nPLLClk / nRefClk;
- 
- 	if ( ( ak4375_data->nSeldain == 0 ) || ( fs <= 96000 ) ) 
+
+	if ( ( ak4375_data->nSeldain == 0 ) || ( fs <= 96000 ) )
 	{
 		MDIVbit = nPLLClk / nMClk;
 		DIVbit = 0;
 	}
-	else 
+	else
 	{
 		MDIVbit = 5;
 		DIVbit = 1;
-	} 
-	
+	}
+
 	PLDbit--;
 	PLMbit--;
 	MDIVbit--;
@@ -868,7 +864,7 @@ static int ak4375_set_timer(struct snd_soc_codec *codec)
 	hptm = 0;
 
 	if ( ak4375_data->nSeldain == 1 ) nfs = ak4375_data->fs2;
-	else 	nfs = ak4375_data->fs1;
+	else	nfs = ak4375_data->fs1;
 
 	//LVDTM2-0 bits set
 	ret = snd_soc_read(codec, AK4375_03_POWER_MANAGEMENT4);
@@ -917,14 +913,14 @@ static int ak4375_set_timer(struct snd_soc_codec *codec)
 
 static int ak4375_hw_params_set(struct snd_soc_codec *codec, int nfs1)
 {
-	u8 	fs;
+	u8	fs;
 	u8  src;
 
 	akdbgprt("\t[AK4375] %s(%d)\n",__FUNCTION__,__LINE__);
 
 	src = snd_soc_read(codec, AK4375_0A_JITTER_CLEANER_SETTING3);
 	src = (src & 0x02) >> 1;
-	
+
 	fs = snd_soc_read(codec, AK4375_05_CLOCK_MODE_SELECT);
 	fs &= ~AK4375_FS;
 
@@ -969,11 +965,11 @@ static int ak4375_hw_params_set(struct snd_soc_codec *codec, int nfs1)
 	}
 	snd_soc_write(codec, AK4375_05_CLOCK_MODE_SELECT, fs);
 
-	if ( ak4375_data->nPllMode == 0 ) 
+	if ( ak4375_data->nPllMode == 0 )
 	{	//Not PLL mode
 		ak4375_set_mcki(codec, nfs1, ak4375_data->rclk);
 	}
-	else 
+	else
 	{								//PLL mode
 		ak4375_set_pllblock(codec, nfs1);
 	}
@@ -987,7 +983,7 @@ static int ak4375_hw_params_set(struct snd_soc_codec *codec, int nfs1)
 		ak4375_data->nSeldain = 0;
 		ak4375_writeMask(codec, AK4375_0A_JITTER_CLEANER_SETTING3, 0xC2, 0x00);	//XCKSEL=XCKCPSEL=SELDAIN=0
 	}
-	
+
 	ak4375_set_timer(codec);
 
 	return 0;
@@ -1087,7 +1083,7 @@ static inline u32 ak4375_read_reg_cache(struct snd_soc_codec *codec, u16 reg)
  * Write ak4375 register cache
  */
 static inline void ak4375_write_reg_cache(
-struct snd_soc_codec *codec, 
+struct snd_soc_codec *codec,
 u16 reg,
 u16 value)
 {
@@ -1100,12 +1096,8 @@ unsigned int ak4375_i2c_read(struct snd_soc_codec *codec, unsigned int reg)
 {
 
 	int ret;
-    #ifdef VENDOR_EDIT
-    //John.Xu@PhoneSw.AudioDriver, 2016/05/11, Add for one MM Key log
-    char ret_str[30];
-    #endif /* VENDOR_EDIT */
 
-	if ( reg == AK4375_16_DUMMY ) { // Dummy Register. 
+	if ( reg == AK4375_16_DUMMY ) { // Dummy Register.
 		ret = ak4375_read_reg_cache(codec, reg);
 		return ret;
 	}
@@ -1115,11 +1107,6 @@ unsigned int ak4375_i2c_read(struct snd_soc_codec *codec, unsigned int reg)
 
 	if (ret < 0) {
 		akdbgprt("\t[AK4375] %s(%d)\n",__FUNCTION__,__LINE__);
-        #ifdef VENDOR_EDIT
-        //John.Xu@PhoneSw.AudioDriver, 2016/05/11, Add for add one MM Key log
-        snprintf(ret_str, sizeof(ret_str), "%d", ret);
-        mm_keylog_write("hp pa i2c read failed", ret_str, TYPE_HP_PA_EXCEPTION);
-        #endif /* VENDOR_EDIT */
 	}
 	return ret;
 }
@@ -1127,26 +1114,17 @@ unsigned int ak4375_i2c_read(struct snd_soc_codec *codec, unsigned int reg)
 static int ak4375_i2c_write(struct snd_soc_codec *codec, unsigned int reg,
 	unsigned int value)
 {
-    #ifdef VENDOR_EDIT
-    //John.Xu@PhoneSw.AudioDriver, 2016/05/11, Add for one MM Key log
-    char ret_str[30];
-    #endif /* VENDOR_EDIT */
 	ak4375_write_reg_cache(codec, reg, value);
 
 	akdbgprt("\t[ak4375] %s: (addr,data)=(%x, %x)\n",__FUNCTION__, reg, value);
 
-	if ( reg == AK4375_16_DUMMY ) return 0;  // Dummy Register. 
+	if ( reg == AK4375_16_DUMMY ) return 0;  // Dummy Register.
 
 	if(i2c_smbus_write_byte_data(codec->control_data, (u8)(reg & 0xFF), (u8)(value & 0xFF))<0) {
 		akdbgprt("\t[AK4375] %s(%d)\n",__FUNCTION__,__LINE__);
-        #ifdef VENDOR_EDIT
-        //John.Xu@PhoneSw.AudioDriver, 2016/05/11, Add for add one MM Key log
-        snprintf(ret_str, sizeof(ret_str), "%d", -EIO);
-        mm_keylog_write("hp pa i2c write failed", ret_str, TYPE_HP_PA_EXCEPTION);
-        #endif /* VENDOR_EDIT */
 		return EIO;
 	}
-	
+
 	return 0;
 }
 #endif
@@ -1166,7 +1144,7 @@ u16 value)
 	if ( (mask == 0) || (mask == 0xFF) ) {
 		newdata = value;
 	}
-	else { 
+	else {
 		olddata = ak4375_read_reg_cache(codec, reg);
 	    newdata = (olddata & ~(mask)) | value;
 	}
@@ -1181,7 +1159,7 @@ u16 value)
 // * for AK4375
 static int ak4375_trigger(struct snd_pcm_substream *substream, int cmd, struct snd_soc_dai *codec_dai)
 {
-	int 	ret = 0;
+	int	ret = 0;
  //   struct snd_soc_codec *codec = codec_dai->codec;
 
 	akdbgprt("\t[AK4375] %s(%d)\n",__FUNCTION__,__LINE__);
@@ -1212,20 +1190,20 @@ static int ak4375_set_dai_mute2(struct snd_soc_codec *codec, int mute)
 {
 	int ret = 0;
 	int nfs, ndt, ndt2;
-	
+
 	if ( ak4375_data->nSeldain == 1 ) nfs = ak4375_data->fs2;
-	else 	nfs = ak4375_data->fs1;
-	
+	else	nfs = ak4375_data->fs1;
+
 	akdbgprt("\t[AK4375] %s mute[%s]\n",__FUNCTION__, mute ? "ON":"OFF");
-	
-	
+
+
 	if (mute) {	//SMUTE: 1 , MUTE
 		if (ak4375_data->nSeldain) {
-			ret = snd_soc_update_bits(codec, AK4375_09_JITTER_CLEANER_SETTING2, 0x01, 0x01); 
+			ret = snd_soc_update_bits(codec, AK4375_09_JITTER_CLEANER_SETTING2, 0x01, 0x01);
 			ndt = (1024000 << ak4375_data->nSmt) / nfs;
 			mdelay(ndt);
 			ret = snd_soc_update_bits(codec, AK4375_02_POWER_MANAGEMENT3, 0x80, 0x00);
-		}		
+		}
 	}
 	else {		// SMUTE: 0 ,NORMAL operation
 		ak4375_data->nSmt = (ak4375_data->nSrcOutFsSel + SMUTE_TIME_MODE);
@@ -1237,17 +1215,17 @@ static int ak4375_set_dai_mute2(struct snd_soc_codec *codec, int mute)
 			ndt -= ndt2;
 			if (ndt < 4) ndt=4;
 			mdelay(ndt);
-			ret =snd_soc_update_bits(codec, AK4375_09_JITTER_CLEANER_SETTING2, 0x01, 0x00); 
+			ret =snd_soc_update_bits(codec, AK4375_09_JITTER_CLEANER_SETTING2, 0x01, 0x00);
 			mdelay(ndt2);
 		}
 		else {
 			mdelay(ndt);
-		}		
+		}
 	}
 	return ret;
 }
 
-static int ak4375_set_dai_mute(struct snd_soc_dai *dai, int mute) 
+static int ak4375_set_dai_mute(struct snd_soc_dai *dai, int mute)
 {
     struct snd_soc_codec *codec = dai->codec;
 
@@ -1274,8 +1252,8 @@ static struct snd_soc_dai_ops ak4375_dai_ops = {
 	.digital_mute = ak4375_set_dai_mute,
 };
 
-struct snd_soc_dai_driver ak4375_dai[] = {   
-	{										 
+struct snd_soc_dai_driver ak4375_dai[] = {
+	{
 		.name = "ak4375-AIF1",
 		.playback = {
 		       .stream_name = "Playback",
@@ -1285,7 +1263,7 @@ struct snd_soc_dai_driver ak4375_dai[] = {
 		       .formats = AK4375_FORMATS,
 		},
 		.ops = &ak4375_dai_ops,
-	},										 
+	},
 };
 /*OPPO 2014-08-22 zhzhyon Delete for reason*/
 #if 0
@@ -1414,7 +1392,7 @@ struct snd_soc_codec_driver soc_codec_dev_ak4375 = {
 	.reg_word_size = sizeof(u8),
 	.reg_cache_default = ak4375_reg,
 	.readable_register = ak4375_readable,
-	.volatile_register = ak4375_volatile,	
+	.volatile_register = ak4375_volatile,
 	.dapm_widgets = ak4375_dapm_widgets,
 	.num_dapm_widgets = ARRAY_SIZE(ak4375_dapm_widgets),
 	.dapm_routes = ak4375_intercon,
@@ -1428,7 +1406,7 @@ static int ak4375_i2c_probe(struct i2c_client *i2c,
 	struct ak4375_priv *ak4375;
 	struct snd_soc_codec *codec;
 	int ret=0;
-	
+
 	akdbgprt("\t[AK4375] %s(%d)\n",__FUNCTION__,__LINE__);
 
 
@@ -1438,15 +1416,15 @@ static int ak4375_i2c_probe(struct i2c_client *i2c,
 	/*OPPO 2014-08-22 zhzhyon Add for reason*/
 	ak4375->audio_vdd_en_gpio = of_get_named_gpio(i2c->dev.of_node,
 					"audio-vdd-enable-gpios", 0);
-	if (ak4375->audio_vdd_en_gpio < 0) 
+	if (ak4375->audio_vdd_en_gpio < 0)
 	{
 		dev_err(&i2c->dev,
 			"property %s in node %s not found %d\n",
 			"audio-vdd-enable-gpios", i2c->dev.of_node->full_name,
 			ak4375->audio_vdd_en_gpio);
-	} 
-	
-	if (gpio_is_valid(ak4375->audio_vdd_en_gpio)) 
+	}
+
+	if (gpio_is_valid(ak4375->audio_vdd_en_gpio))
 	{
 		gpio_request(ak4375->audio_vdd_en_gpio,"audio_vdd_enable");
 		pr_err("zhzhyon:set ak4375 vdd gpio\n");
@@ -1458,15 +1436,15 @@ static int ak4375_i2c_probe(struct i2c_client *i2c,
 	usleep(800);
 	ak4375->ak4375_reset_gpio = of_get_named_gpio(i2c->dev.of_node,
 					"ak4375-reset-gpios", 0);
-	if (ak4375->ak4375_reset_gpio < 0) 
+	if (ak4375->ak4375_reset_gpio < 0)
 	{
 		dev_err(&i2c->dev,
 			"property %s in node %s not found %d\n",
 			"audio-vdd-enable-gpios", i2c->dev.of_node->full_name,
 			ak4375->ak4375_reset_gpio);
-	} 
-	
-	if (gpio_is_valid(ak4375->ak4375_reset_gpio)) 
+	}
+
+	if (gpio_is_valid(ak4375->ak4375_reset_gpio))
 	{
 		gpio_request(ak4375->ak4375_reset_gpio,"ak4375_reset_gpio");
 		pr_err("zhzhyon:set ak4375_reset_gpio\n");
@@ -1532,12 +1510,8 @@ static int __init ak4375_modinit(void)
 {
 
 	akdbgprt("\t[AK4375] %s(%d)\n", __FUNCTION__,__LINE__);
-	/*OPPO 2014-08-22 zhzhyon Add for reason*/           
-	/*OPPO 2015-05-08 hanqing.wang for MSM_15062 = OPPO_15011*/
-	/*OPPO 2015-05-11 hanqing.wang Add for reason OPPO_15011 15062 OPPO_MSM_15062*/
 	/*OPPO 2014-08-22 zhzhyon Add for reason*/
-	/*OPPO 2015-06-24 hanqing.wang Add for add OPPO_15085 = OPPO_15018, 15085 OPPO_MSM_15085 */	
-	if((is_project(OPPO_14045)) || (is_project(OPPO_15018)) || (is_project(OPPO_15011)) || (is_project(OPPO_15085)) || (is_project(OPPO_15022))) //|| (is_project(OPPO_14046)) || (is_project(OPPO_14047)))
+	if((is_project(OPPO_15018)) || (is_project(OPPO_15011)) || (is_project(OPPO_15022)))
 	{
 		return i2c_add_driver(&ak4375_i2c_driver);
 	}
@@ -1553,11 +1527,8 @@ module_init(ak4375_modinit);
 
 static void __exit ak4375_exit(void)
 {
-	/*OPPO 2014-08-22 zhzhyon Add for reason*/ /*OPPO 2015-05-08 hanqing.wang for MSM_15062 = OPPO_15011*/
-	/*OPPO 2015-05-11 hanqing.wang Add for reason OPPO_15011 15062 OPPO_MSM_15062*/
 	/*OPPO 2014-08-22 zhzhyon Add for reason*/
-/*OPPO 2015-06-24 hanqing.wang Add for add OPPO_15085 = OPPO_15018, 15085 OPPO_MSM_15085 */		
-	if((is_project(OPPO_14045)) || (is_project(OPPO_15018)) || (is_project(OPPO_15011)) || (is_project(OPPO_15085))|| (is_project(OPPO_15022))) //|| (is_project(OPPO_14046)) || (is_project(OPPO_14047)))
+	if((is_project(OPPO_15018)) || (is_project(OPPO_15011)) || (is_project(OPPO_15022)))
 	{
 		i2c_del_driver(&ak4375_i2c_driver);
 	}
@@ -1565,7 +1536,7 @@ static void __exit ak4375_exit(void)
 	{
 		pr_err("The project is not 14045,don't consider ak4375\n");
 	}
-	/*OPPO 2014-08-22 zhzhyon Add end*/	
+	/*OPPO 2014-08-22 zhzhyon Add end*/
 }
 module_exit(ak4375_exit);
 

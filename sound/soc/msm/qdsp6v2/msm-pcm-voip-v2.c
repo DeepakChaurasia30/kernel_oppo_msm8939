@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2017, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -494,7 +494,11 @@ static void voip_process_ul_pkt(uint8_t *voc_pkt,
 		pr_debug("%s: pkt_len =%d, frame.pktlen=%d, timestamp=%d\n",
 			 __func__, pkt_len, buf_node->frame.pktlen, timestamp);
 
-		prtd->pcm_capture_irq_pos += prtd->pcm_capture_count;
+		if (prtd->mode == MODE_PCM)
+			prtd->pcm_capture_irq_pos += buf_node->frame.pktlen;
+		else
+			prtd->pcm_capture_irq_pos += prtd->pcm_capture_count;
+
 		spin_unlock_irqrestore(&prtd->dsp_ul_lock, dsp_flags);
 		snd_pcm_period_elapsed(prtd->capture_substream);
 	} else {
@@ -656,7 +660,11 @@ static void voip_process_dl_pkt(uint8_t *voc_pkt, void *private_data)
 		pr_debug("%s: frame.pktlen=%d\n", __func__,
 			 buf_node->frame.pktlen);
 
-		prtd->pcm_playback_irq_pos += prtd->pcm_count;
+		if (prtd->mode == MODE_PCM)
+			prtd->pcm_playback_irq_pos += buf_node->frame.pktlen;
+		else
+			prtd->pcm_playback_irq_pos += prtd->pcm_count;
+
 		spin_unlock_irqrestore(&prtd->dsp_lock, dsp_flags);
 		snd_pcm_period_elapsed(prtd->playback_substream);
 	} else {
@@ -810,10 +818,20 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 			if (prtd->mode == MODE_PCM) {
 				ret = copy_from_user(&buf_node->frame.voc_pkt,
 							buf, count);
+				if (ret) {
+					pr_err("%s: copy from user failed %d\n",
+					       __func__, ret);
+					return -EFAULT;
+				}
 				buf_node->frame.pktlen = count;
 			} else {
 				ret = copy_from_user(&buf_node->frame,
 							buf, count);
+				if (ret) {
+					pr_err("%s: copy from user failed %d\n",
+					       __func__, ret);
+					return -EFAULT;
+				}
 				if (buf_node->frame.pktlen >= count)
 					buf_node->frame.pktlen = count -
 					(sizeof(buf_node->frame.frm_hdr) +

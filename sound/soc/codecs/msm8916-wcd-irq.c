@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2014-2015, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -30,12 +30,10 @@
 
 #define MAX_NUM_IRQS 14
 #define NUM_IRQ_REGS 2
-
 /*xiang.fei@Multimedia, 2014/11/18, Modify for resume time*/
-#ifndef VENDOR_EDIT
-#define WCD9XXX_SYSTEM_RESUME_TIMEOUT_MS 300
+#ifndef CONFIG_MACH_OPPO
+#define WCD9XXX_SYSTEM_RESUME_TIMEOUT_MS 700
 #else
-//#define WCD9XXX_SYSTEM_RESUME_TIMEOUT_MS 1000
 #define WCD9XXX_SYSTEM_RESUME_TIMEOUT_MS 2000 //John.Xu@Multimedia 2015-06-03 modified for Headset detect
 #endif
 /*xiang.fei@Multimedia, 2014/11/18, Modify end*/
@@ -166,39 +164,25 @@ int wcd9xxx_spmi_request_irq(int irq, irq_handler_t handler,
 			const char *name, void *priv)
 {
 	int rc;
-    #ifdef VENDOR_EDIT
-    //John.Xu@PhoneSw.AudioDriver, 2015/07/01, Add for system not reume when in sleep mode
 	unsigned long irq_flags;
-	if (strcmp(name, "mbhc sw intr")) {
-        irq_flags = IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING |
-            IRQF_ONESHOT;
-    } else {
-        irq_flags = IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING |
-            IRQF_ONESHOT | IRQF_NO_SUSPEND;
-    }
-    #endif /* VENDOR_EDIT */
 
 	map.linuxirq[irq] =
 		spmi_get_irq_byname(map.spmi[BIT_BYTE(irq)], NULL,
 				    irq_names[irq]);
-    #ifndef VENDOR_EDIT
-    //John.Xu@PhoneSw.AudioDriver, 2015/07/01, Modify for system not reume when in sleep mode
-    /*
+
+	if (strcmp(name, "mbhc sw intr"))
+		irq_flags = IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING |
+			IRQF_ONESHOT;
+	else
+		irq_flags = IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING |
+			IRQF_ONESHOT | IRQF_NO_SUSPEND;
+	pr_debug("%s: name:%s irq_flags = %lx\n", __func__, name, irq_flags);
+
 	rc = devm_request_threaded_irq(&map.spmi[BIT_BYTE(irq)]->dev,
 				map.linuxirq[irq], NULL,
 				wcd9xxx_spmi_irq_handler,
-				IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING
-				| IRQF_ONESHOT,
+				irq_flags,
 				name, priv);
-	*/
-    #else /* VENDOR_EDIT */
-    rc = devm_request_threaded_irq(&map.spmi[BIT_BYTE(irq)]->dev,
-                map.linuxirq[irq], NULL,
-                wcd9xxx_spmi_irq_handler,
-                irq_flags,
-				name, priv);
-    #endif /* VENDOR_EDIT */
-
 		if (rc < 0) {
 			dev_err(&map.spmi[BIT_BYTE(irq)]->dev,
 				"Can't request %d IRQ\n", irq);
@@ -412,14 +396,7 @@ EXPORT_SYMBOL(wcd9xxx_spmi_lock_sleep);
 void wcd9xxx_spmi_unlock_sleep()
 {
 	mutex_lock(&map.pm_lock);
-	#ifndef VENDOR_EDIT
-	/* Le.Li@EXP.MultiMedia.AudioDriver.HeadsetDet, 2017/06/13,
-	** Add for Wacklock can't be released */
 	if (--map.wlock_holders == 0) {
-	#else /* VENDOR_EDIT */
-	if (--map.wlock_holders <= 0) {
-		map.wlock_holders = 0;
-	#endif /* VENDOR_EDIT */
 		pr_debug("%s: releasing wake lock pm_state %d -> %d\n",
 			 __func__, map.pm_state, WCD9XXX_PM_SLEEPABLE);
 		/*

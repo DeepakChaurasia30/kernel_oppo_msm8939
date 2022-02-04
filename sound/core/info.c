@@ -253,6 +253,7 @@ static ssize_t snd_info_entry_write(struct file *file, const char __user *buffer
 	struct snd_info_buffer *buf;
 	ssize_t size = 0;
 	loff_t pos;
+	unsigned long realloc_size;
 
 	data = file->private_data;
 	if (snd_BUG_ON(!data))
@@ -261,7 +262,8 @@ static ssize_t snd_info_entry_write(struct file *file, const char __user *buffer
 	pos = *offset;
 	if (pos < 0 || (long) pos != pos || (ssize_t) count < 0)
 		return -EIO;
-	if ((unsigned long) pos + (unsigned long) count < (unsigned long) pos)
+	realloc_size = (unsigned long) pos + (unsigned long) count;
+	if (realloc_size < (unsigned long) pos || realloc_size > UINT_MAX)
 		return -EIO;
 	switch (entry->content) {
 	case SNDRV_INFO_CONTENT_TEXT:
@@ -674,6 +676,36 @@ int snd_info_card_free(struct snd_card *card)
 	return 0;
 }
 
+/*
+ * snd_register_module_info - create and register module
+ * @module: the module pointer
+ * @name: the module name
+ * @parent: the parent directory
+ *
+ * Creates and registers new module entry.
+ *
+ * Return: The pointer of the new instance, or NULL on failure.
+ */
+struct snd_info_entry *snd_register_module_info(struct module *module,
+						const char *name,
+						struct snd_info_entry *parent)
+{
+	struct snd_info_entry *entry;
+
+	entry = snd_info_create_module_entry(module, name, parent);
+	if (!entry)
+		return NULL;
+
+	entry->mode = S_IFDIR | S_IRUGO | S_IXUGO;
+
+	if (snd_info_register(entry) < 0) {
+		snd_info_free_entry(entry);
+		return NULL;
+	}
+
+	return entry;
+}
+EXPORT_SYMBOL(snd_register_module_info);
 
 /**
  * snd_info_get_line - read one line from the procfs buffer
