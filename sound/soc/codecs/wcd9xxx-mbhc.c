@@ -24,7 +24,6 @@
 #include <linux/mfd/wcd9xxx/wcd9xxx_registers.h>
 #include <linux/mfd/wcd9xxx/wcd9320_registers.h>
 #include <linux/mfd/wcd9xxx/pdata.h>
-#include <linux/usb/msm_hsusb.h>
 #include <sound/pcm.h>
 #include <sound/pcm_params.h>
 #include <sound/soc.h>
@@ -36,12 +35,9 @@
 #include <linux/kernel.h>
 #include <linux/gpio.h>
 #include <linux/input.h>
-#include <soc/oppo/oppo_project.h>
-#ifdef CONFIG_MACH_OPPO
 /*OPPO 2014-09-01 zhzhyon Add for headset detect*/
 #include <linux/wakelock.h>
 /*OPPO 2014-09-01 zhzhyon Add end*/
-#endif
 #include "wcd9320.h"
 #include "wcd9306.h"
 #include "wcd9xxx-mbhc.h"
@@ -205,19 +201,20 @@ enum wcd9xxx_current_v_idx {
 	WCD9XXX_CURRENT_V_BR_H,
 };
 
-#ifdef CONFIG_MACH_OPPO
 /*OPPO 2014-09-01 zhzhyon Add for headset detect*/
+#ifdef VENDOR_EDIT
 static int headset_detect_inited = 0;
 static struct wake_lock headset_detect;
+#endif
 /*OPPO 2014-09-01 zhzhyon Add end*/
+
 
 /*OPPO 2014-09-01 zhzhyon Add for headset key*/
+#ifdef VENDOR_EDIT
 static int headset_key_inited = 0;
 static struct wake_lock headset_key;
-/*OPPO 2014-09-01 zhzhyon Add end*/
 #endif
-
-static struct wcd9xxx_mbhc *oppo_mbhc;
+/*OPPO 2014-09-01 zhzhyon Add end*/
 
 static int wcd9xxx_detect_impedance(struct wcd9xxx_mbhc *mbhc, uint32_t *zl,
 				    uint32_t *zr);
@@ -606,11 +603,6 @@ static void wcd9xxx_codec_switch_cfilt_mode(struct wcd9xxx_mbhc *mbhc,
 	}
 }
 
-static inline bool wcd9xxx_has_usb_headset_mux(void)
-{
-	return is_project(OPPO_14005) && get_Operator_Version() >= 5;
-}
-
 static void wcd9xxx_jack_report(struct wcd9xxx_mbhc *mbhc,
 				struct snd_soc_jack *jack, int status, int mask)
 {
@@ -869,44 +861,6 @@ static void wcd9xxx_insert_detect_setup(struct wcd9xxx_mbhc *mbhc, bool ins)
 	snd_soc_update_bits(mbhc->codec, WCD9XXX_A_MBHC_INSERT_DETECT, 1, 1);
 }
 
-enum {
-	VOOC_CHARGER_MODE,
-	HEADPHONE_MODE,
-	NORMAL_CHARGER_MODE,
-};
-extern int opchg_set_switch_mode(u8 mode);
-extern void opchg_check_earphone_on(void);
-extern void opchg_check_earphone_off(void);
-
-void oppo_headset_detect_plug(int status)
-{
-	if (!wcd9xxx_has_usb_headset_mux()) {
-		return;
-	}
-	if (!oppo_mbhc) {
-		return;
-	}
-	if (status) {
-		gpio_direction_output(
-			oppo_mbhc->mbhc_cfg->ap_audio_enable_gpio, 1);
-		opchg_set_switch_mode(HEADPHONE_MODE);
-		opchg_check_earphone_on();
-		pr_err("[%s] headset insert \n", __func__);
-		oppo_mbhc->hph_status |= SND_JACK_HEADPHONE;
-		wcd9xxx_jack_report(oppo_mbhc, &oppo_mbhc->headset_jack,
-			oppo_mbhc->hph_status, WCD9XXX_JACK_MASK);
-	} else {
-		pr_err("[%s] headset remove \n", __func__);
-		gpio_direction_output(
-			oppo_mbhc->mbhc_cfg->ap_audio_enable_gpio, 0);
-		opchg_check_earphone_off();
-		opchg_set_switch_mode(NORMAL_CHARGER_MODE);
-		oppo_mbhc->hph_status &= ~SND_JACK_HEADPHONE;
-		wcd9xxx_jack_report(oppo_mbhc, &oppo_mbhc->headset_jack,
-			oppo_mbhc->hph_status, WCD9XXX_JACK_MASK);
-	}
-}
-
 /* called under codec_resource_lock acquisition */
 static void wcd9xxx_report_plug(struct wcd9xxx_mbhc *mbhc, int insertion,
 				enum snd_jack_types jack_type)
@@ -925,12 +879,10 @@ static void wcd9xxx_report_plug(struct wcd9xxx_mbhc *mbhc, int insertion,
 		if (wcd9xxx_cancel_btn_work(mbhc))
 			pr_debug("%s: button press is canceled\n", __func__);
 		else if (mbhc->buttons_pressed) {
-			if (!wcd9xxx_has_usb_headset_mux()) {
-				pr_debug("%s: release of button press%d\n",
-					__func__, jack_type);
-				wcd9xxx_jack_report(mbhc, &mbhc->button_jack, 0,
-						mbhc->buttons_pressed);
-			}
+			pr_debug("%s: release of button press%d\n",
+				 __func__, jack_type);
+			wcd9xxx_jack_report(mbhc, &mbhc->button_jack, 0,
+					    mbhc->buttons_pressed);
 			mbhc->buttons_pressed &=
 				~WCD9XXX_JACK_BUTTON_MASK;
 		}
@@ -955,17 +907,6 @@ static void wcd9xxx_report_plug(struct wcd9xxx_mbhc *mbhc, int insertion,
 		if (mbhc->mbhc_cb && mbhc->mbhc_cb->hph_auto_pulldown_ctrl)
 			mbhc->mbhc_cb->hph_auto_pulldown_ctrl(mbhc->codec,
 								false);
-		if (is_project(OPPO_14005)) {
-			gpio_direction_output(mbhc->mbhc_cfg->ap_audio_enable_gpio, 0);
-			opchg_check_earphone_off();
-
-			if (wcd9xxx_has_usb_headset_mux()) {
-				pr_err("[%s]headset remove, headset_status set to 0  \n", __func__);
-				atomic_set(&headset_status, 0);
-				oppo_mbhc = NULL;
-				opchg_set_switch_mode(NORMAL_CHARGER_MODE);
-			}
-		}
 	} else {
 		/*
 		 * Report removal of current jack type.
@@ -1026,19 +967,6 @@ static void wcd9xxx_report_plug(struct wcd9xxx_mbhc *mbhc, int insertion,
 
 		if (mbhc->impedance_detect && impedance_detect_en)
 			wcd9xxx_detect_impedance(mbhc, &mbhc->zl, &mbhc->zr);
-
-		if (is_project(OPPO_14005)) {
-			if (wcd9xxx_has_usb_headset_mux()) {
-				pr_err("[%s]mbhc->current_plug=PLUG_TYPE_HEADSET, headset_status set to 1\n", __func__);
-				atomic_set(&headset_status, 1);
-				atomic_set(&otg_id_state, 1);
-				oppo_mbhc = mbhc;
-				pr_err("[%s]otg_id_state=%d,headset_status=%d\n", __func__, atomic_read(&otg_id_state), atomic_read(&headset_status));
-			}
-			gpio_direction_output(mbhc->mbhc_cfg->ap_audio_enable_gpio, 1);
-			opchg_set_switch_mode(HEADPHONE_MODE);
-			opchg_check_earphone_on();
-		}
 
 		pr_debug("%s: Reporting insertion %d(%x)\n", __func__,
 			 jack_type, mbhc->hph_status);
@@ -2504,9 +2432,9 @@ static void wcd9xxx_find_plug_and_report(struct wcd9xxx_mbhc *mbhc,
 			wcd9xxx_cleanup_hs_polling(mbhc);
 			pr_debug("setup mic trigger for further detection\n");
 			mbhc->lpi_enabled = true;
-			if (!wcd9xxx_has_usb_headset_mux())
-				wcd9xxx_enable_hs_detect(mbhc, 1, MBHC_USE_MB_TRIGGER |
-							MBHC_USE_HPHL_TRIGGER, false);
+			wcd9xxx_enable_hs_detect(mbhc, 1, MBHC_USE_MB_TRIGGER |
+							  MBHC_USE_HPHL_TRIGGER,
+						 false);
 		}
 	} else {
 		WARN(1, "Unexpected current plug_type %d, plug_type %d\n",
@@ -2562,8 +2490,7 @@ static void wcd9xxx_mbhc_decide_swch_plug(struct wcd9xxx_mbhc *mbhc)
 		wcd9xxx_schedule_hs_detect_plug(mbhc,
 						&mbhc->correct_plug_swch);
 	} else if (plug_type == PLUG_TYPE_HEADPHONE) {
-		if (!wcd9xxx_has_usb_headset_mux())
-			wcd9xxx_report_plug(mbhc, 1, SND_JACK_HEADPHONE);
+		wcd9xxx_report_plug(mbhc, 1, SND_JACK_HEADPHONE);
 		wcd9xxx_cleanup_hs_polling(mbhc);
 		wcd9xxx_schedule_hs_detect_plug(mbhc,
 						&mbhc->correct_plug_swch);
@@ -3394,20 +3321,6 @@ static void wcd9xxx_swch_irq_handler(struct wcd9xxx_mbhc *mbhc)
 		pr_debug("%s: button press is canceled\n", __func__);
 
 	insert = !wcd9xxx_swch_level_remove(mbhc);
-
-	if (wcd9xxx_has_usb_headset_mux()) {
-		pr_err("[%s]befor check,otg_id_state=%d,headset_status=%d\n", __func__,
-			atomic_read(&otg_id_state), atomic_read(&headset_status));
-		if (atomic_read(&headset_status) == 0 && !insert) {
-			atomic_set(&otg_id_state, 1);
-			opchg_check_earphone_off();
-			opchg_set_switch_mode(NORMAL_CHARGER_MODE);
-			oppo_otg_id_status(atomic_read(&otg_id_state));
-		}
-		pr_err("[%s]after check,otg_id_state=%d,headset_status=%d\n", __func__,
-			atomic_read(&otg_id_state), atomic_read(&headset_status));
-	}
-
 	pr_debug("%s: Current plug type %d, insert %d\n", __func__,
 		 mbhc->current_plug, insert);
 	if ((mbhc->current_plug == PLUG_TYPE_NONE) && insert) {
@@ -4320,23 +4233,24 @@ static int wcd9xxx_setup_jack_detect_irq(struct wcd9xxx_mbhc *mbhc)
 	int ret = 0;
 	void *core_res = mbhc->resmgr->core_res;
 
-#ifdef CONFIG_MACH_OPPO
 	/*OPPO 2014-09-01 zhzhyon Add for headset detect*/
+	#ifdef VENDOR_EDIT
 	if (!headset_detect_inited) {
 		headset_detect_inited = 1;
-		wake_lock_init(&headset_detect, WAKE_LOCK_SUSPEND,
-				"headset_detect");
+		wake_lock_init(&headset_detect, WAKE_LOCK_SUSPEND, "headset_detect");
 	}
+	#endif
 	/*OPPO 2014-09-01 zhzhyon Add end*/
 
+
 	/*OPPO 2014-09-01 zhzhyon Add for reason*/
+	#ifdef VENDOR_EDIT
 	if (!headset_key_inited) {
 		headset_key_inited = 1;
-		wake_lock_init(&headset_key, WAKE_LOCK_SUSPEND,
-				"headset_key");
+		wake_lock_init(&headset_key, WAKE_LOCK_SUSPEND, "headset_key");
 	}
+	#endif
 	/*OPPO 2014-09-01 zhzhyon Add end*/
-#endif
 
 	if (mbhc->mbhc_cfg->gpio) {
 		ret = request_threaded_irq(mbhc->mbhc_cfg->gpio_irq, NULL,
@@ -4626,64 +4540,6 @@ static void wcd9xxx_cleanup_debugfs(struct wcd9xxx_mbhc *mbhc)
 }
 #endif
 
-int wcd9xxx_mbhc_set_keycode(struct wcd9xxx_mbhc *mbhc)
-{
-	enum snd_jack_types type;
-	int i, ret, result = 0;
-	int *btn_key_code;
-
-	btn_key_code = mbhc->mbhc_cfg->key_code;
-
-	for (i = 0 ; i < 8 ; i++) {
-		if (btn_key_code[i] != 0) {
-			switch (i) {
-			case 0:
-				type = SND_JACK_BTN_0;
-				break;
-			case 1:
-				type = SND_JACK_BTN_1;
-				break;
-			case 2:
-				type = SND_JACK_BTN_2;
-				break;
-			case 3:
-				type = SND_JACK_BTN_3;
-				break;
-			case 4:
-				type = SND_JACK_BTN_4;
-				break;
-			case 5:
-				type = SND_JACK_BTN_5;
-				break;
-			case 6:
-				type = SND_JACK_BTN_6;
-				break;
-			case 7:
-				type = SND_JACK_BTN_7;
-				break;
-			default:
-				WARN_ONCE(1, "Wrong button number:%d\n", i);
-				result = -1;
-				break;
-			}
-			ret = snd_jack_set_key(mbhc->button_jack.jack,
-					       type,
-					       btn_key_code[i]);
-			if (ret) {
-				pr_err("%s: Failed to set code for %d\n",
-					__func__, btn_key_code[i]);
-				result = -1;
-			}
-			input_set_capability(
-				mbhc->button_jack.jack->input_dev,
-				EV_KEY, btn_key_code[i]);
-			pr_debug("%s: set btn%d key code:%d\n", __func__,
-				i, btn_key_code[i]);
-		}
-	}
-	return result;
-}
-
 int wcd9xxx_mbhc_start(struct wcd9xxx_mbhc *mbhc,
 		       struct wcd9xxx_mbhc_config *mbhc_cfg)
 {
@@ -4706,10 +4562,6 @@ int wcd9xxx_mbhc_start(struct wcd9xxx_mbhc *mbhc,
 
 	/* Save mbhc config */
 	mbhc->mbhc_cfg = mbhc_cfg;
-
-	/* Set btn key code */
-	if (wcd9xxx_mbhc_set_keycode(mbhc))
-		pr_err("Set btn key code error!!!\n");
 
 	/* Get HW specific mbhc registers' address */
 	wcd9xxx_get_mbhc_micbias_regs(mbhc, MBHC_PRIMARY_MIC_MB);
@@ -4754,7 +4606,7 @@ int wcd9xxx_mbhc_start(struct wcd9xxx_mbhc *mbhc,
 			schedule_delayed_work(&mbhc->mbhc_firmware_dwork,
 					     usecs_to_jiffies(FW_READ_TIMEOUT));
 		else
-			pr_debug("%s: Skipping to read mbhc fw, 0x%pK %pK\n",
+			pr_debug("%s: Skipping to read mbhc fw, 0x%p %p\n",
 				 __func__, mbhc->mbhc_fw, mbhc->mbhc_cal);
 	}
 
@@ -5147,7 +4999,7 @@ static int wcd9xxx_remeasure_z_values(struct wcd9xxx_mbhc *mbhc,
 	right = !!(r);
 
 	dev_dbg(codec->dev, "%s: Remeasuring impedance values\n", __func__);
-	dev_dbg(codec->dev, "%s: l: %pK, r: %pK, left=%d, right=%d\n", __func__,
+	dev_dbg(codec->dev, "%s: l: %p, r: %p, left=%d, right=%d\n", __func__,
 		 l, r, left, right);
 
 	/* Remeasure V2 values */

@@ -64,7 +64,6 @@ config SND_SOC_ALL_CODECS
 	select SND_SOC_STA529 if I2C
 	select SND_SOC_STAC9766 if SND_SOC_AC97_BUS
 	select SND_SOC_TAS5086 if I2C
-	select SND_SOC_TFA9890 if I2C
 	select SND_SOC_TLV320AIC23 if I2C
 	select SND_SOC_TLV320AIC26 if SPI_MASTER
 	select SND_SOC_TLV320AIC32X4 if I2C
@@ -190,9 +189,6 @@ config SND_SOC_ADS117X
 	tristate
 
 config SND_SOC_AK4104
-	tristate
-
-config SND_SOC_AK4375
 	tristate
 
 config SND_SOC_AK4535
@@ -330,9 +326,6 @@ config SND_SOC_STAC9766
 config SND_SOC_TAS5086
 	tristate
 
-config SND_SOC_TFA9890
-	tristate
-
 config SND_SOC_TLV320AIC23
 	tristate
 
@@ -347,9 +340,6 @@ config SND_SOC_TLV320AIC3X
 	tristate
 
 config SND_SOC_TLV320DAC33
-	tristate
-
-config SND_SOC_TS4621
 	tristate
 
 config SND_SOC_TWL4030
@@ -377,20 +367,9 @@ config SND_SOC_WCD9306
 config SND_SOC_WCD9330
         tristate
 
-config SND_SOC_WSA881X
-        tristate
-
-config SND_SOC_WCD9335
-        tristate
-
-config SND_SOC_WSA881X
-        tristate
-	select REGMAP_SWR
-
 config SND_SOC_WCD9XXX
 	tristate
 	default y if SND_SOC_WCD9320=y || SND_SOC_WCD9306=y || SND_SOC_WCD9330=y
-	default y if SND_SOC_WCD9335=y
 
 config SND_SOC_MSM8X10_WCD
 	tristate
@@ -400,20 +379,10 @@ config SND_SOC_MSM8X16_WCD
 
 config SND_SOC_WCD_CPE
 	tristate
-	default y if SND_SOC_WCD9330=y || SND_SOC_WCD9335=y
-	default y if SND_SOC_MSM8909_WCD=y || SND_SOC_MSM8X16_WCD=y
+	default y if SND_SOC_WCD9330=y
 
 config SND_SOC_MSM8909_WCD
 	tristate
-
-config AUDIO_EXT_CLK
-	tristate
-	default y if SND_SOC_WCD9335=y || SND_SOC_WCD9330=y || SND_SOC_MSM8X16_WCD=y
-	default y if SND_SOC_MSM8909_WCD=y
-
-config SND_SOC_WCD_MBHC
-	tristate
-	default y if SND_SOC_MSM8909_WCD=y || SND_SOC_MSM8X16_WCD=y
 
 config SND_SOC_WL1273
 	tristate
