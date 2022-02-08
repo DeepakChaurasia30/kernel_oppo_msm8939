@@ -10,7 +10,7 @@
 #include <asm/uaccess.h>
 #include <linux/module.h>
 #include <linux/init.h>
-#include <linux/slab.h>
+#include <linux/slab.h>	
 #include <linux/i2c.h>
 #include <linux/mutex.h>
 #include <linux/delay.h>
@@ -19,7 +19,7 @@
 #include <linux/gpio.h>
 #include <linux/input.h>
 #include <linux/miscdevice.h>
-#include "../stmvl6180.h"
+#include "stmvl6180.h"
 
 #include <linux/kernel.h>
 #include <linux/regulator/consumer.h>
@@ -64,7 +64,7 @@ int VL6180x_I2CWrite(VL6180xDev_t dev, uint8_t *buff, uint8_t len)
 	err = i2c_transfer(pclient->adapter,msg,1); //return the actual messages transfer
 	if(err != 1)
 	{
-		pr_err("%s: i2c_transfer err:%d, addr:0x%x, reg:0x%x\n", __func__, err, pclient->addr,
+		pr_err("%s: i2c_transfer err:%d, addr:0x%x, reg:0x%x\n", __func__, err, pclient->addr, 
 																				(buff[0]<<8|buff[1]));
 		return -1;
 	}
@@ -81,7 +81,7 @@ int VL6180x_I2CWrite(VL6180xDev_t dev, uint8_t *buff, uint8_t len)
  */
 int VL6180x_I2CRead(VL6180xDev_t dev, uint8_t *buff, uint8_t len)
 {
-	struct i2c_msg msg[1];
+ 	struct i2c_msg msg[1];
 	int err=0;
 
 	msg[0].addr = pclient->addr;

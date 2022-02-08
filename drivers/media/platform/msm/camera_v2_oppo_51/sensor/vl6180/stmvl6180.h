@@ -26,7 +26,7 @@
 #include <asm/uaccess.h>
 #include <linux/module.h>
 #include <linux/init.h>
-#include <linux/slab.h>
+#include <linux/slab.h>	
 #include <linux/i2c.h>
 #include <linux/mutex.h>
 #include <linux/delay.h>
@@ -48,7 +48,7 @@
 #include "msm_cci.h"
 #include "msm_camera_i2c.h"
 
-#define STMVL6180_DRV_NAME	"stmvl6180"
+#define STMVL6180_DRV_NAME	"stmvl6180" 
 
 #define DRIVER_VERSION		"1.0"
 #define I2C_M_WR			0x00
@@ -64,7 +64,7 @@
  * VL6180 register addresses
  */
 //Device Registers
-#define VL6180_MODEL_ID_REG				0x0000
+#define VL6180_MODEL_ID_REG			    	0x0000
 #define VL6180_MODEL_REV_MAJOR_REG		    0x0001
 #define VL6180_MODEL_REV_MINOR_REG		    0x0002
 #define VL6180_MODULE_REV_MAJOR_REG		    0x0003
@@ -72,15 +72,15 @@
 
 #define VL6180_REVISION_ID_REG			    0x0005
 #define VL6180_REVISION_ID_REG_BYTES		1
-#define VL6180_DATE_HI_REG				0x0006
+#define VL6180_DATE_HI_REG			    	0x0006
 #define VL6180_DATE_HI_REG_BYTES		    1
-#define VL6180_DATE_LO_REG				0x0007
-#define VL6180_DATE_LO_REG_BYTES		    1
-#define VL6180_TIME_REG				    0x0008
+#define VL6180_DATE_LO_REG			    	0x0007
+#define VL6180_DATE_LO_REG_BYTES	   	    1
+#define VL6180_TIME_REG			    	    0x0008
 #define VL6180_TIME_REG_BYTES			    2
-#define VL6180_CODE_REG				    0x000a
+#define VL6180_CODE_REG			    	    0x000a
 #define VL6180_CODE_REG_BYTES			    1
-#define VL6180_FIRMWARE_REVISION_ID_REG		    0x000b
+#define VL6180_FIRMWARE_REVISION_ID_REG	    	    0x000b
 #define VL6180_FIRMWARE_REVISION_ID_REG_BYTES	    1
 
 // Result Registers
@@ -91,7 +91,7 @@
 #define VL6180_RESULT__RANGE_REFERENCE_RATE_REG                     0x0068
 #define VL6180_RESULT__RANGE_REFERENCE_RATE_REG_BYTES               2
 #define VL6180_RESULT__RANGE_RETURN_VCSEL_COUNT_REG                 0x006c
-#define VL6180_RESULT__RANGE_RETURN_VCSEL_COUNT_REG_BYTES           4
+#define VL6180_RESULT__RANGE_RETURN_VCSEL_COUNT_REG_BYTES           4           
 #define VL6180_RESULT__RANGE_REFERENCE_VCSEL_COUNT_REG              0x0070
 #define VL6180_RESULT__RANGE_REFERENCE_VCSEL_COUNT_REG_BYTES        4
 #define VL6180_RESULT__RANGE_RETURN_AMB_COUNT_REG                   0x0074
@@ -119,7 +119,7 @@ struct stmvl6180_data {
 	struct delayed_work	dwork;		/* for PS  work handler */
 	struct input_dev *input_dev_ps;
 
-	int	irq;
+	int 	irq;
 	unsigned int enable;
 
 	/* control flag from HAL */
@@ -132,7 +132,7 @@ struct stmvl6180_data {
 
 	/* Range Data */
 	VL6180x_RangeData_t rangeData;
-
+	
 	/* Range Result Register Data */
 	VL6180x_RangeResultData_t rangeResult;
 	uint8_t  ResultBuffer[RESULT_REG_COUNT];
@@ -153,7 +153,7 @@ struct stmvl6180_data {
 
 	int subdev_id;
 
-	unsigned int is_6180;
+	unsigned int is_6180; 
 //	unsigned int enable;
 	/* Range Data */
 

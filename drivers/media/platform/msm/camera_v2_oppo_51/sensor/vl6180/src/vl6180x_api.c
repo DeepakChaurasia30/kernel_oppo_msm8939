@@ -16,7 +16,7 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
-NON-INFRINGEMENT OF INTELLECTUAL PROPERTY RIGHTS ARE DISCLAIMED.
+NON-INFRINGEMENT OF INTELLECTUAL PROPERTY RIGHTS ARE DISCLAIMED. 
 IN NO EVENT SHALL STMICROELECTRONICS INTERNATIONAL N.V. BE LIABLE FOR ANY
 DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -255,12 +255,12 @@ int VL6180x_InitData(VL6180xDev_t dev){
         VL6180xDevDataSet(dev, Part2PartOffsetNVM, offset);
 #ifdef CALIBRATE_CONFIG
         if (user_offset_calib != 0xffffffff){
-		VL6180xDevDataSet(dev, Part2PartOffsetNVM, (int8_t)user_offset_calib);
+        	VL6180xDevDataSet(dev, Part2PartOffsetNVM, (int8_t)user_offset_calib);
 	}
         if (user_xtalk_calib != 0xffffffff)
-            VL6180x_WrWord(dev, SYSRANGE_CROSSTALK_COMPENSATION_RATE, (int16_t)user_xtalk_calib);
-#endif
-
+            VL6180x_WrWord(dev, SYSRANGE_CROSSTALK_COMPENSATION_RATE, (int16_t)user_xtalk_calib);	
+#endif              
+                
         dmax_status = _DMax_InitData(dev);
         if( dmax_status < 0 ){
             VL6180x_ErrLog("DMax init failure");
@@ -319,7 +319,7 @@ void VL6180x_SetOffset(VL6180xDev_t dev, int8_t offset)
     /* Apply scaling on  part-2-part offset */
     Offset = VL6180xDevDataGet(dev, Part2PartOffsetNVM)/scaling;
 
-	VL6180x_WrByte(dev, SYSRANGE_PART_TO_PART_RANGE_OFFSET, Offset);
+   	VL6180x_WrByte(dev, SYSRANGE_PART_TO_PART_RANGE_OFFSET, Offset);
 
     LOG_FUNCTION_END(0);
 }
@@ -378,24 +378,24 @@ int VL6180x_StaticInit(VL6180xDev_t dev){
     int status, init_status;
     status = 0;
     init_status = 0;
-
+	
     LOG_FUNCTION_START("");
 
     /* TODO doc When using configurable scaling but using 1x as start condition
      * load tunning upscale  or not ??? */
     if( _GetUpscale(dev) == 1 && !(VL6180x_UPSCALE_SUPPORT<0)){
-	init_status=VL6180x_RangeStaticInit(dev);
+    	init_status=VL6180x_RangeStaticInit(dev);		
     }
     else{
-	init_status=VL6180x_UpscaleStaticInit(dev);
+    	init_status=VL6180x_UpscaleStaticInit(dev);
     }
 
     if( init_status <0 ){
-	VL6180x_ErrLog("StaticInit fail");
-	goto error;
+    	VL6180x_ErrLog("StaticInit fail");
+    	goto error;
     }
     else if(init_status > 0){
-	VL6180x_ErrLog("StaticInit warning");
+    	VL6180x_ErrLog("StaticInit warning");
     }
 
 #if REFRESH_CACHED_DATA_AFTER_INIT
@@ -404,13 +404,13 @@ int VL6180x_StaticInit(VL6180xDev_t dev){
 #ifdef  VL6180x_HAVE_ALS_DATA
         uint8_t data;
         status=  VL6180x_RdByte(dev, FW_ALS_RESULT_SCALER, &data);
-        if( status ) break;
+        if( status ) break;	
         VL6180xDevDataSet(dev, AlsScaler, data);
 
         status=  VL6180x_RdByte(dev, SYSALS_ANALOGUE_GAIN, &data);
         if( status ) break;
-
-        VL6180x_AlsSetAnalogueGain(dev, data);
+	
+        VL6180x_AlsSetAnalogueGain(dev, data);	
 #endif
     }
     while(0);
@@ -419,7 +419,7 @@ int VL6180x_StaticInit(VL6180xDev_t dev){
         VL6180x_ErrLog("StaticInit fail");
     }
     if( !status && init_status){
-	status = init_status;
+    	status = init_status;
     }
 error:
     LOG_FUNCTION_END(status);
@@ -451,7 +451,7 @@ int VL6180x_Prepare(VL6180xDev_t dev)
 
     do{
         status=VL6180x_StaticInit(dev);
-        if( status<0)
+        if( status<0) 
 		break;
 
         /* set range InterruptMode to new sample */
@@ -839,7 +839,7 @@ int VL6180x_RangeGetMeasurement(VL6180xDev_t dev, VL6180x_RangeData_t *pRangeDat
 	#if VL6180x_WRAP_AROUND_FILTER_SUPPORT || VL6180x_HAVE_DMAX_RANGING
             status = _GetRateResult(dev, pRangeData);
             if( status )
-		goto error;
+            	goto error;
 	#endif
     #if VL6180x_WRAP_AROUND_FILTER_SUPPORT
             /* if enabled run filter */
@@ -888,14 +888,14 @@ int VL6180x_RangeGetMeasurement_ext(VL6180xDev_t dev, VL6180x_RangeResultData_t 
 #if VL6180x_WRAP_AROUND_FILTER_SUPPORT
     /* if enabled run filter */
     if( _IsWrapArroundActive(dev) ){
-	status = _filter_GetResult_ext(dev, pResultData, pRangeData);
+    	status = _filter_GetResult_ext(dev, pResultData, pRangeData);
         if( !status){
-		/* patch the range status and measure if it is filtered */
+        	/* patch the range status and measure if it is filtered */
             if( pRangeData->range_mm != pRangeData->FilteredData.range_mm) {
-		pRangeData->errorStatus=RangingFiltered;
+            	pRangeData->errorStatus=RangingFiltered;
                 pRangeData->range_mm = pRangeData->FilteredData.range_mm;
             }
-	}
+       	}
     }
 #endif
 
@@ -1194,7 +1194,7 @@ static int _UpscaleInitPatch0(VL6180xDev_t dev){
 int VL6180x_UpscaleRegInit(VL6180xDev_t dev)
 {
     /*  apply REGISTER_TUNING_ER02_100614_CustomerView.txt */
-    VL6180x_WrByte( dev, 0x0207, 0x01);
+    VL6180x_WrByte( dev, 0x0207, 0x01);	
     VL6180x_WrByte( dev, 0x0208, 0x01);
     VL6180x_WrByte( dev, 0x0096, 0x00);
     VL6180x_WrByte( dev, 0x0097, 0x54);
@@ -1270,14 +1270,14 @@ int VL6180x_UpscaleSetScaling(VL6180xDev_t dev, uint8_t scaling)
         /* Apply scaling on  part-2-part offset */
         Offset = VL6180xDevDataGet(dev, Part2PartOffsetNVM)/scaling;
         status = VL6180x_WrByte(dev, SYSRANGE_PART_TO_PART_RANGE_OFFSET, Offset);
-//kelong add to write cross talk to sensor
+//kelong add to write cross talk to sensor		
 	 if (user_xtalk_calib != 0xffffffff)
-		VL6180x_WrWord(dev, SYSRANGE_CROSSTALK_COMPENSATION_RATE, (int16_t)user_xtalk_calib);
+       		VL6180x_WrWord(dev, SYSRANGE_CROSSTALK_COMPENSATION_RATE, (int16_t)user_xtalk_calib);		
 //kelong add to write cross talk to sensor
-
+		
 #if ! VL6180x_EXTENDED_RANGE
         if( status == 0 && !VL6180x_EXTENDED_RANGE && scaling!=1 ){
-		status = NOT_GUARANTEED ;
+        	status = NOT_GUARANTEED ;
         }
 #endif
     }
@@ -1305,11 +1305,11 @@ int VL6180x_UpscaleGetScaling(VL6180xDev_t dev)
 static int  VL6180x_UpscaleStaticInit(VL6180xDev_t dev)
 {
     /* todo make these a fail macro in case only 1x is suppoted */
-    int status;
+    int status;		
 
     LOG_FUNCTION_START("");
     do{
-        status=VL6180x_UpscaleRegInit(dev);
+        status=VL6180x_UpscaleRegInit(dev);		
         if( status){
             VL6180x_ErrLog("regInit fail");
             break;
@@ -1323,9 +1323,9 @@ static int  VL6180x_UpscaleStaticInit(VL6180xDev_t dev)
 #endif
     } while(0);
     if( !status){
-        /*  must write the scaler at least once to the device to ensure the scaler is in a known state. */
+        /*  must write the scaler at least once to the device to ensure the scaler is in a known state. */	
 
-        status=VL6180x_UpscaleSetScaling(dev, _GetUpscale(dev));
+        status=VL6180x_UpscaleSetScaling(dev, _GetUpscale(dev));		
         VL6180x_WrByte( dev, 0x016, 0x00); /* change fresh out of set status to 0 */
     }
     LOG_FUNCTION_END(status);
@@ -2256,7 +2256,7 @@ static int _GetRateResult(VL6180xDev_t dev, VL6180x_RangeData_t *pRangeData) {
         if (status) {
             VL6180x_ErrLog("RESULT_RANGE_RETURN_CONV_TIME rd fail");
             break;
-        }
+        }		
         status = VL6180x_RdDWord(dev, RESULT_RANGE_REFERENCE_SIGNAL_COUNT, &(pRangeData->m_refSignalCount));
         if (status) {
             VL6180x_ErrLog("RESULT_RANGE_REFERENCE_SIGNAL_COUNT rd fail");
@@ -2309,7 +2309,7 @@ static int _GetRateResult_ext(VL6180xDev_t dev, VL6180x_RangeResultData_t *pResu
         pRangeData->rtnRate = m_rtnSignalRate;
         pRangeData->rtnAmbRate = m_rtnAmbientRate;
 	 pRangeData->m_refRate = (pResultData->Result_range_reference_signal_count*1000)/calcConvTime;
-	 pRangeData->m_refAmbRate = (pResultData->Result_range_reference_amb_count*1000)/calcConvTime;
+	 pRangeData->m_refAmbRate = (pResultData->Result_range_reference_amb_count*1000)/calcConvTime;	
 
     } while (0);
     return status;
@@ -2464,3 +2464,6 @@ static int _DMax_Compute(VL6180xDev_t dev, VL6180x_RangeData_t *pRange){
 #undef Fix7_2_KCPs
 
 #endif /* VL6180x_HAVE_DMAX_RANGING */
+
+
+

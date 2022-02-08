@@ -57,18 +57,22 @@ stmvl6180x_dev vl6180x_dev;
 #define VL6180_I2C_ADDRESS  (0x52>>1)
 static struct i2c_client *client;
 
+#ifdef CONFIG_MACH_OPPO
+/*zhengrong.zhang, 2015/07/08, add for laser*/
+extern bool is_laser_supported;
+#endif
 /*
  * Global data
  */
 //******************************** IOCTL definitions
-#define VL6180_IOCTL_INIT		_IO('p', 0x01)
+#define VL6180_IOCTL_INIT 		_IO('p', 0x01)
 #define VL6180_IOCTL_XTALKCALB		_IO('p', 0x02)
 #define VL6180_IOCTL_OFFCALB		_IO('p', 0x03)
 #define VL6180_IOCTL_STOP		_IO('p', 0x05)
 #define VL6180_IOCTL_SETXTALK		_IOW('p', 0x06, unsigned int)
 #define VL6180_IOCTL_SETOFFSET		_IOW('p', 0x07, int8_t)
-#define VL6180_IOCTL_GETDATA		_IOR('p', 0x0a, unsigned long)
-#define VL6180_IOCTL_GETDATAS		_IOR('p', 0x0b, VL6180x_RangeData_t)
+#define VL6180_IOCTL_GETDATA 		_IOR('p', 0x0a, unsigned long)
+#define VL6180_IOCTL_GETDATAS 		_IOR('p', 0x0b, VL6180x_RangeData_t)
 struct mutex	  vl6180_mutex;
 #define MULTI_READ	     1
 #define CALIBRATION_FILE 1
@@ -359,15 +363,15 @@ static void stmvl6180_ps_parse_result(struct i2c_client *client)
 //	data->rangeData.m_refRate = data->rangeResult.Result_range_reference_rate;
 //	data->rangeData.m_refRate = data->rangeResult.Result_range_reference_rate;
 	vl6180_data->rangeData.m_rtnSignalCount = vl6180_data->rangeResult.Result_range_return_signal_count;
-	vl6180_data->rangeData.m_refSignalCount =	vl6180_data->rangeResult.Result_range_reference_signal_count;
+	vl6180_data->rangeData.m_refSignalCount = 	vl6180_data->rangeResult.Result_range_reference_signal_count;
 	vl6180_data->rangeData.m_rtnAmbientCount = vl6180_data->rangeResult.Result_range_return_amb_count;
 	vl6180_data->rangeData.m_refAmbientCount = vl6180_data->rangeResult.Result_range_reference_amb_count;
 	vl6180_data->rangeData.m_rawRange_mm = vl6180_data->rangeResult.Result_range_raw;
 
 	if(vl6180_data->rangeResult.Result_range_return_conv_time < vl6180_data->rangeResult.Result_range_reference_conv_time)
-		vl6180_data->rangeData.m_convTime =	vl6180_data->rangeResult.Result_range_reference_conv_time;
+		vl6180_data->rangeData.m_convTime = 	vl6180_data->rangeResult.Result_range_reference_conv_time;
 	else
-		vl6180_data->rangeData.m_convTime =	vl6180_data->rangeResult.Result_range_return_conv_time;
+		vl6180_data->rangeData.m_convTime = 	vl6180_data->rangeResult.Result_range_return_conv_time;
 
 	return;
 }
@@ -501,7 +505,7 @@ static ssize_t stmvl6180_store_enable_ps_sensor(struct device *dev,
 {
 	struct stmvl6180_data *vl6180_data = vl6180_data_g;
 	unsigned long val = simple_strtoul(buf, NULL, 10);
-	unsigned long flags;
+ 	unsigned long flags;
 	int rc = 0;
 
 	CDBG("%s:enable %ld\n",__func__, val);
@@ -520,7 +524,7 @@ static ssize_t stmvl6180_store_enable_ps_sensor(struct device *dev,
 				return rc;
 			}
 			msleep(30);
-			mutex_lock(&vl6180_data->work_mutex);
+	 		mutex_lock(&vl6180_data->work_mutex);
 
 			//re-init
 			VL6180x_Prepare(vl6180x_dev);
@@ -559,12 +563,12 @@ static ssize_t stmvl6180_store_enable_ps_sensor(struct device *dev,
 			spin_unlock_irqrestore(&vl6180_data->update_lock.wait_lock, flags);
 
 			stmvl6180_set_enable(client, 1); /* Power On */
-			mutex_unlock(&vl6180_data->work_mutex);
+		 	mutex_unlock(&vl6180_data->work_mutex);
 		}
 	}
 	else {
 		//turn off p sensor
-		mutex_lock(&vl6180_data->work_mutex);
+	 	mutex_lock(&vl6180_data->work_mutex);
 		vl6180_data->enable_ps_sensor = 0;
 		if (vl6180_data->ps_is_singleshot == 0)
 			VL6180x_RangeSetSystemMode(vl6180x_dev, MODE_START_STOP);
@@ -581,7 +585,7 @@ static ssize_t stmvl6180_store_enable_ps_sensor(struct device *dev,
 		 */
 		cancel_delayed_work(&vl6180_data->dwork);
 		spin_unlock_irqrestore(&vl6180_data->update_lock.wait_lock, flags);
-		mutex_unlock(&vl6180_data->work_mutex);
+ 		mutex_unlock(&vl6180_data->work_mutex);
 //		kelong need to check
 		rc = stmvl6180_power_enable(vl6180_data_g, 0);
 		if(rc) {
@@ -691,7 +695,7 @@ static void stmvl6180_work_handler(struct work_struct *work)
 
 	schedule_delayed_work(&vl6180_data->dwork, msecs_to_jiffies((vl6180_data->delay_ms)));	// restart timer
 
-	mutex_unlock(&vl6180_data->work_mutex);
+   	mutex_unlock(&vl6180_data->work_mutex);
 
 	return;
 }
@@ -772,7 +776,7 @@ static ssize_t stmvl6180_store_set_delay_ms(struct device *dev,
 		pr_err("%s: set delay_ms=%ld\n", __func__, delay_ms);
 		return count;
 	}
-	mutex_lock(&vl6180_data->work_mutex);
+ 	mutex_lock(&vl6180_data->work_mutex);
 	vl6180_data->delay_ms=delay_ms;
 	mutex_unlock(&vl6180_data->work_mutex);
 	return count;
@@ -799,7 +803,7 @@ static int stmvl6180_ioctl_handler(struct file *file,
 				unsigned int cmd, unsigned long arg, void __user *p)
 {
 	int rc=0;
-	unsigned long flags;
+ 	unsigned long flags;
 	unsigned long distance=0;
 	struct i2c_client *client;
 
@@ -857,7 +861,7 @@ static int stmvl6180_ioctl_handler(struct file *file,
 
 		return 0;
 	}
-	case VL6180_IOCTL_XTALKCALB:	/*crosstalk calibration*/
+	case VL6180_IOCTL_XTALKCALB: 	/*crosstalk calibration*/
 	{
 		struct stmvl6180_data *vl6180_data = vl6180_data_g;
 		client = i2c_getclient();
@@ -919,7 +923,7 @@ static int stmvl6180_ioctl_handler(struct file *file,
 
 		return 0;
 	}
-	case VL6180_IOCTL_OFFCALB:	/*offset calibration*/
+	case VL6180_IOCTL_OFFCALB: 	/*offset calibration*/
 	{
 		struct stmvl6180_data *vl6180_data = vl6180_data_g;
 		client = i2c_getclient();
@@ -1061,7 +1065,7 @@ static int stmvl6180_open(struct inode *inode, struct file *file)
 
 static int stmvl6180_flush(struct file *file, fl_owner_t id)
 {
-	unsigned long flags;
+ 	unsigned long flags;
 	struct i2c_client *client;
 	struct stmvl6180_data *vl6180_data = vl6180_data_g;
 	client = i2c_getclient();
@@ -1099,10 +1103,10 @@ static int stmvl6180_release(struct inode *inode, struct file *file)
 {
 	int rc = 0;
 
-	if(vl6180_data_g){
+    	if(vl6180_data_g){
 		rc = stmvl6180_power_enable(vl6180_data_g, 0);
 		if(rc<0)
-			pr_err("%s:%d stmvl6180 power down failed %d\n", __func__, __LINE__, rc);
+	   		pr_err("%s:%d stmvl6180 power down failed %d\n", __func__, __LINE__, rc);
 	}
 
 	return 0;
@@ -1112,8 +1116,8 @@ static const struct file_operations stmvl6180_ranging_fops = {
 		.owner =			THIS_MODULE,
 		.unlocked_ioctl =	stmvl6180_ioctl,
 		.open =			stmvl6180_open,
-		.flush =			stmvl6180_flush,
-		.release =		stmvl6180_release,
+		.flush = 			stmvl6180_flush,
+		.release = 		stmvl6180_release,
 };
 
 static struct miscdevice stmvl6180_ranging_dev = {
@@ -1149,6 +1153,10 @@ static int stmvl6180_init_client(struct stmvl6180_data *vl6180_data)
 	CDBG("read MODLE_ID: 0x%x\n", id);
 	if (id == 0xb4) {
 		pr_err("STM VL6180 Found\n");
+#ifdef CONFIG_MACH_OPPO
+/*zhengrong.zhang, 2015/07/08, add for laser*/
+		is_laser_supported = true;
+#endif
 	}
 	else if (id==0){
 		pr_err("Not found STM VL6180\n");
@@ -1879,3 +1887,4 @@ MODULE_AUTHOR("STMicroelectronics Imaging Division");
 MODULE_DESCRIPTION("ST FlightSense Time-of-Flight sensor driver");
 MODULE_LICENSE("GPL");
 MODULE_VERSION(DRIVER_VERSION);
+

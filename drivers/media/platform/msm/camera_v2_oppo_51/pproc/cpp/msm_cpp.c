@@ -1432,6 +1432,7 @@ static void msm_cpp_do_timeout_work(struct work_struct *work)
 		return;
 	}
 #ifdef CONFIG_MACH_OPPO
+/*Added by Jinshui.Liu@Camera 20150623 start for avoid multi init the timer*/
 	msm_cpp_clear_timer(cpp_timer.data.cpp_dev);
 #endif
 	atomic_set(&cpp_timer.used, 0);

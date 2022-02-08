@@ -16,7 +16,7 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
-NON-INFRINGEMENT OF INTELLECTUAL PROPERTY RIGHTS ARE DISCLAIMED.
+NON-INFRINGEMENT OF INTELLECTUAL PROPERTY RIGHTS ARE DISCLAIMED. 
 IN NO EVENT SHALL STMICROELECTRONICS INTERNATIONAL N.V. BE LIABLE FOR ANY
 DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -274,10 +274,10 @@ typedef struct {
     uint32_t m_refSignalCount;
     uint32_t m_rtnAmbientCount;
     uint32_t m_refAmbientCount;
-    uint16_t m_refRate;
+    uint16_t m_refRate;	
     uint16_t m_crossTalk;
-    uint8_t m_rangeOffset;
-    uint8_t m_rawRange_mm;
+    uint8_t m_rangeOffset;	
+    uint8_t m_rawRange_mm;	
 //add for debug
 }VL6180x_RangeData_t;
 
@@ -291,10 +291,10 @@ typedef struct {
 	uint8_t Result_interrupt_status;
 	uint8_t Result_range_val;
 	uint8_t Result_range_raw;
-	uint16_t Result_range_return_rate;
+	uint16_t Result_range_return_rate;	
 	uint16_t Result_range_reference_rate;
-	uint32_t Result_range_return_amb_rate;
-	uint32_t Result_range_reference_amb_rate;
+	uint32_t Result_range_return_amb_rate; 	
+	uint32_t Result_range_reference_amb_rate;	
 	uint32_t Result_range_return_signal_count;
 	uint32_t Result_range_reference_signal_count;
 	uint32_t Result_range_return_amb_count;
@@ -305,7 +305,7 @@ typedef struct {
 	uint16_t Sys_range_cross_talk;
 	uint8_t Sys_range_range_offset;
 }VL6180x_RangeResultData_t;
-
+	
 /** use where fix point 9.7 bit values are expected
  *
  * given a floating point value f it's .7 bit point is (int)(f*(1<<7))*/
@@ -358,7 +358,7 @@ typedef enum {
  *  @brief    Device registers and masks definitions
  */
 
-
+ 
 /** @ingroup device_regdef
  * @{*/
 
@@ -580,7 +580,7 @@ typedef enum {
 #define SYSALS_THRESH_LOW                     0x03C
 /** ALS intermeasurement period */
 #define SYSALS_INTERMEASUREMENT_PERIOD        0x03E
-/**
+/** 
  * @warning or value with 0x40 when writing to these register*/
 #define SYSALS_ANALOGUE_GAIN                  0x03F
 /** ALS integration period */
