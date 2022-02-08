@@ -23,9 +23,18 @@ enum {
 	DRAM_UNKNOWN,
 };
 
-struct manufacture_info {
+struct manufacture_info
+{
 	char *version;
 	char *manufacture;
+};
+
+/*xiongxing@EXP.BaseDrv.Camera, 2015-12-30 add for camera*/
+enum VENDOR_INFO{
+    VENDOR_SUNNY = 0x01,
+    VENDOR_TRULY = 0x02,
+	VENDOR_QTECH = 0x05,
+    VENDOR_OTHER,
 };
 
 int register_device_proc(char *name, char *version, char *manufacture);
