@@ -37,25 +37,27 @@
 		compatible = "ti,lm3642";
 		status = "okay";
 		qcom,cci-master = <0>;
-		cam_vio-supply = <&pm8916_l16>;
-		qcom,cam-vreg-name = "cam_vio";
-		qcom,cam-vreg-type = <0>;
-		qcom,cam-vreg-min-voltage = <1800000>;
-		qcom,cam-vreg-max-voltage = <1800000>;
-		qcom,cam-vreg-op-mode = <80000>;
 		qcom,slave-id = <0xc6 0x00 0x00>;
 		label = "lm3642";
+
+        cam_vio-supply = <&pm8916_l16>;
+		qcom,cam-vreg-name = "cam_vio";
+		qcom,cam-vreg-min-voltage = < 1800000>;
+		qcom,cam-vreg-max-voltage = < 1800000>;
+		qcom,cam-vreg-op-mode = < 0>;
+
 		qcom,gpio-no-mux = <0>;
 		qcom,enable_pinctrl;
 		pinctrl-names = "cam_flash_default", "cam_flash_suspend";
 		pinctrl-0 = <&cam_sensor_flash_default>;
 		pinctrl-1 = <&cam_sensor_flash_sleep>;
-		gpios = <&msm_gpio 32 0>, <&msm_gpio 31 0>;
+		gpios = <&msm_gpio 32 0>,<&msm_gpio 31 0>, <&pm8916_gpios 2 0>;
 		qcom,gpio-flash-en = <0>;
+		qcom,gpio-flash-now = <1>;
+		qcom,gpio-vio = <2>;
 		qcom,gpio-req-tbl-num = <0 1 2>;
 		qcom,gpio-req-tbl-flags = <0 0 0>;
-		qcom,gpio-req-tbl-label = "FLASH_EN", "FLASH_NOW";
-		qcom,gpio-flash-now = <1>;
+		qcom,gpio-req-tbl-label = "FLASH_EN", "FLASH_NOW", "Gpio-vio";
 		qcom,current = <200>;
 		qcom,max-current = <950>;
 		linux,name = "flashlight";
@@ -345,7 +347,7 @@
 		qcom,mount-angle = <90>;
 		qcom,actuator-src = <&actuator0>;
 		qcom,eeprom-src = <&eeprom0 &eeprom1>;
-		qcom,led-flash-src = <&led_flash0>;
+		qcom,led-flash-src = <&lm3642>;
 		cam_vana-supply = <&pm8916_l11>;
 		cam_vaf-supply = <&pm8916_l10>;
 		cam_vio-supply = <&pm8916_l16>;
