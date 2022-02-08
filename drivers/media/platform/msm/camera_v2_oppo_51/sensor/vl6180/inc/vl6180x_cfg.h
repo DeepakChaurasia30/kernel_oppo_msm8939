@@ -16,7 +16,7 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
-NON-INFRINGEMENT OF INTELLECTUAL PROPERTY RIGHTS ARE DISCLAIMED.
+NON-INFRINGEMENT OF INTELLECTUAL PROPERTY RIGHTS ARE DISCLAIMED. 
 IN NO EVENT SHALL STMICROELECTRONICS INTERNATIONAL N.V. BE LIABLE FOR ANY
 DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * $Date: 2015-01-08 05:27:09 -0800 (Thu, 08 Jan 2015) $
  * $Revision: 2038 $
  */
-
+ 
 /**
  * @file VL6180x_cfg.h
  *
@@ -53,7 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * @def VL6180x_UPSCALE_SUPPORT
  * @brief Configure up-scale capabilities and default up-scale factor for ranging operations
- *
+ * 
  * @li 1 : Fixed scaling by 1 (no up-scaling support)
  * @li 2 : Fixed scaling by 2
  * @li 3 : Fixed scaling by 3
@@ -72,28 +72,28 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * @def VL6180x_HAVE_DMAX_RANGING
  * @brief Enable DMax calculation for ranging applications.
- *
+ *  
  * When set to 1, __Dmax__ is returned by API typically when  @a VL6180x_RangePollMeasurement() high level
  * function is called (this is returned in @a VL6180x_RangeData_t structure).
- * __Dmax__ is an estimation of the maximum distance (in mm) the product can report a valid distance of a 17% target for
+ * __Dmax__ is an estimation of the maximum distance (in mm) the product can report a valid distance of a 17% target for 
  * the current ambient light conditions (__Dmax__ decreases when ambient light increases). __Dmax__ should be used only
  * when the product is not able to return a valid distance (no object or object is too far from the ranging sensor).
- * Typically, this is done by checking the __errorStatus__ field of the @a VL6180x_RangeData_t structure returned by
+ * Typically, this is done by checking the __errorStatus__ field of the @a VL6180x_RangeData_t structure returned by 
  * the @a VL6180x_RangePollMeasurement() function.
  * You may refer to ::RangeError_u to get full list of supported error codes.
- * @warning Dmax is estimated for a 17% grey target. If the real target has a reflectance lower than 17%, report Dmax could be over-estimated
+ * @warning Dmax is estimated for a 17% grey target. If the real target has a reflectance lower than 17%, report Dmax could be over-estimated 
  */
 #define VL6180x_HAVE_DMAX_RANGING   1
 
 /**
  * @def VL6180x_WRAP_AROUND_FILTER_SUPPORT
  * @brief Enable wrap around filter (WAF) feature
- *
+ *  
  * In specific conditions, when targeting a mirror or a very reflective metal, a __wrap around__ effect can occur internally to the
  * ranging product which results in returning a wrong distance (under-estimated). Goal of the WAF is to detect this wrap arround effect
  * and to filter it by returning a non-valid distance : __errorStatus__ set to 16 (see ::RangeError_u)
- * @warning Wrap-around filter can not be used when device is running in continuous mode
- *
+ * @warning Wrap-around filter can not be used when device is running in continuous mode 
+ * 
  * @li 0 : Filter is not supported, no filtering code is included in API
  * @li 1 : Filter is supported and active by default
  * @li -1 : Filter is supported but is not active by default @a VL6180x_FilterSetState() can turn it on and off at any time
@@ -114,6 +114,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #endif
-/** @} */ // end of api_config
+/** @} */ // end of api_config  
 
 /* VL6180x_CFG_H_ */
