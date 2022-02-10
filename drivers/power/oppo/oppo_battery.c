@@ -120,6 +120,10 @@ int opchg_init_charge_parameters(struct opchg_charger *chip)
     chip->g_chg_in = -1;
 	chip->opchg_earphone_enable =false;
 
+	//for oppo A37f(15399)
+	chip->aicl_in_500_flag = 0;/*Mofei@EXP.BaseDrv.charge,2016/03/23 add for trying aicl when iacl is in 500 at the beginning */
+	chip->is_lcd_on2off = 0;/*Mofei@EXP.BaseDrv.charge,2016/03/21 add for aicl when lcd is on to off */
+
     for (i = INPUT_CURRENT_MIN;i <= INPUT_CURRENT_MAX;i++) {
         chip->max_input_current[i] = chip->limit_current_max_ma;
     }
@@ -1070,6 +1074,15 @@ void opchg_check_lcd_onoff(struct opchg_charger *chip)
 		else if (is_project(OPPO_15399))
 		{
 			opchg_config_input_chg_current(chip, INPUT_CURRENT_LCD, LCD_OFF_CHARGING_INPUT_CURRENT_15399);
+			#ifdef CONFIG_MACH_OPPO
+			/*Mofei@EXP.BaseDrv.charge,2016/03/21 add for aicl when lcd is off  */
+			if(chip->is_lcd_on2off == 1)
+			{
+				chip->is_lcd_on2off = 0;
+				if(chip->chg_present == 1)
+				opchg_set_input_chg_current(chip, chip->max_input_current[INPUT_CURRENT_MIN], true);
+			}
+			#endif
 		}
 		else if (is_project(OPPO_15018) || is_project(OPPO_15022)) {
 			opchg_config_input_chg_current(chip, INPUT_CURRENT_LCD, LCD_OFF_CHARGING_INPUT_CURRENT_15018);
@@ -1398,10 +1411,26 @@ void opchg_aicl_repeatedly(struct opchg_charger *chip)
 		 || (chip->bat_volt_check_point > 85) || (opchg_get_prop_fast_chg_started(chip) == true)){
 		chip->aicl_delay_count = 0;
 		return;
+		}
+		
+#ifdef CONFIG_MACH_OPPO
+/*Mofei@EXP.BaseDrv.charge,2016/05/05 add for trying aicl when iacl is in 500 at the beginning */
+	if((chip->aicl_in_500_flag == 1) && (chip->aicl_delay_count < OPCHG_AICL_DELAY_15MIN))
+	{
+		chip->aicl_in_500_flag = 0;
+		opchg_set_input_chg_current(chip, chip->max_input_current[INPUT_CURRENT_MIN], true);
 	}
+#endif 
+#ifdef CONFIG_MACH_OPPO
+ /*Mofei@EXP.BaseDrv.charge,2016/05/05 add for not support aicl repeat */
+	if(is_project(OPPO_15399))
+		return;
+#endif
+
 	if(chip->aicl_delay_count > OPCHG_AICL_DELAY_15MIN){
 		chip->aicl_delay_count = 0;
 		opchg_set_input_chg_current(chip, chip->max_input_current[INPUT_CURRENT_MIN], true);
+		pr_debug("%s reaicl charger in currrnt=%d\n",__func__,chip->max_input_current[INPUT_CURRENT_MIN]);
 	} else {
 		chip->aicl_delay_count++;
 	}

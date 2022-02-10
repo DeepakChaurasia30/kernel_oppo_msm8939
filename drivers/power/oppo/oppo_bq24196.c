@@ -395,6 +395,7 @@ int bq24196_set_input_chg_current(struct opchg_charger *chip, int iusbin_mA, boo
 	u8 aicl_count = 0;
 	int chg_vol;
 	int iusbmax = 0;
+	static int count = 0;/*Mofei@EXP.BaseDrv.charge,2016/03/23 add for trying aicl when iacl is in 500 at the beginning */
 
     chip->is_charger_det = 1;
 
@@ -413,22 +414,58 @@ int bq24196_set_input_chg_current(struct opchg_charger *chip, int iusbin_mA, boo
 		bq24196_iusbmax_set_noaicl(chip, iusbin_mA);
 		pr_err("%s no aicl 500ma,iusbin_mA:%d set input current is end \n",__func__,iusbin_mA);
 		chip->is_charger_det = 0;
+	/*Mofei@EXP.BaseDrv.charge,2016/03/23 add for trying aicl when iacl is in 500 at the beginning */
+		if(chip->chg_present == 0)
+			count = 0;
 		return 0;
 	}
 
-	// The situation does not require adaptation
-	if((chip->aicl_current > 0) && (aicl_enable == false)){
-		if(chip->aicl_current > iusbin_mA)
-		{
-			//when chip->aicl_current =2000; iusbin_mA = 1500
-			bq24196_iusbmax_set_noaicl(chip, iusbin_mA);
+ pr_err("%s chip->aicl_current:%d ,aicl_enable:%d iusbin_mA:%d\n",__func__,chip->aicl_current,aicl_enable,iusbin_mA);
+	mutex_lock(&chip->aicl_lock);/*Mofei@EXP.BaseDrv.charge,2016/03/16 add for aicl */
+	if((chip->aicl_current > 0) && (aicl_enable == false))
+	{
+		/*Mofei@EXP.BaseDrv.charge,2016/03/21 add for avoid over_current when plug in 1A charger  */
+		if(chip->aicl_current > 1000 && iusbin_mA >1000)
+        {
+			opchg_set_fast_chg_current(chip, chip->max_fast_current[FAST_CURRENT_MIN]);
+			/*Mofei@EXP.BaseDrv.charge,2016/05/05 add for aicl */
+			iusbmax = min(iusbin_mA, chip->aicl_current);
+			bq24196_iusbmax_set_noaicl(chip, iusbmax);
+	        msleep(90);
+			for(aicl_count = 0;aicl_count < AICL_MAX_COUNT;aicl_count++)
+			{
+			    chg_vol = opchg_get_prop_charger_voltage_now(chip);
+			    if(chg_vol < 4550)
+				{
+					chip->aicl_current = CURRENT_900MA;
+					iusbmax = min(iusbin_mA, chip->aicl_current);
+					bq24196_iusbmax_set_noaicl(chip, iusbmax);
+					chip->aicl_working = false;
+					pr_err("%s aicl end 1500ma_3,chg_vol:%d,iusbmax:%d set input current is end\n",
+							__func__,chg_vol,iusbmax);
+					bq24196_usb_plugout_check_whenaicl(chip);
+					chip->is_charger_det = 0;
+					mutex_unlock(&chip->aicl_lock);/*Mofei@EXP.BaseDrv.charge,2016/03/16 add for aicl */
+					return 0;
+		               }
+			}
 		}
+		// The situation does not require adaptation
+		
 		else
-		{
-			//when chip->aicl_current =1500; iusbin_mA = 2000 or iusbin_mA = 1500
-			bq24196_iusbmax_set_noaicl(chip, chip->aicl_current);
+		{if(chip->aicl_current > iusbin_mA)
+			{
+				//when chip->aicl_current =2000; iusbin_mA = 1500
+				bq24196_iusbmax_set_noaicl(chip, iusbin_mA);
+			}
+			else
+			{
+				//when chip->aicl_current =1500; iusbin_mA = 2000 or iusbin_mA = 1500
+				bq24196_iusbmax_set_noaicl(chip, chip->aicl_current);
+			}
 		}
 		chip->is_charger_det = 0;
+		mutex_unlock(&chip->aicl_lock);/*Mofei@EXP.BaseDrv.charge,2016/03/16 add for aicl */
 		return 0;
 	}
 
@@ -436,6 +473,8 @@ int bq24196_set_input_chg_current(struct opchg_charger *chip, int iusbin_mA, boo
 	msleep(20);
 	opchg_set_fast_chg_current(chip, chip->max_fast_current[FAST_CURRENT_MIN]);
 	chip->aicl_working = true;
+	
+        pr_err("%s chip->aicl_working:%d \n",__func__,chip->aicl_working);
 
 	// set current  500mA
 	bq24196_iusbmax_set_noaicl(chip, CURRENT_500MA);
@@ -461,6 +500,7 @@ int bq24196_set_input_chg_current(struct opchg_charger *chip, int iusbin_mA, boo
 		chip->aicl_working = false;
 		pr_err("%s aicl end 500ma_2,iusbmax:%d set input current is end\n",__func__,iusbmax);
 		chip->is_charger_det = 0;
+ 		mutex_unlock(&chip->aicl_lock);/*Mofei@EXP.BaseDrv.charge,2016/03/16 add for aicl */
 		return 0;
 	}
 
@@ -473,11 +513,25 @@ int bq24196_set_input_chg_current(struct opchg_charger *chip, int iusbin_mA, boo
 			chip->aicl_current = CURRENT_500MA;
 			iusbmax = min(iusbin_mA, chip->aicl_current);
 			bq24196_iusbmax_set_noaicl(chip, iusbmax);
-			pr_err("%s aicl end 500ma_3,chg_vol:%d,iusbmax:%d set input current is end\n",
-					__func__,chg_vol,iusbmax);
+			pr_err("%s aicl end 500ma_3,chg_vol:%d,iusbmax:%d count:%d set input current is end\n",
+					__func__,chg_vol,iusbmax,count);
 			bq24196_usb_plugout_check_whenaicl(chip);
 			chip->aicl_working = false;
 			chip->is_charger_det = 0;
+			#ifdef CONFIG_MACH_OPPO
+	        /*Mofei@EXP.BaseDrv.charge,2016/03/23 add for trying aicl when iacl is in 500 at the beginning */
+			if(count < 5)
+			{
+				count ++ ;
+				chip->aicl_in_500_flag = 1;
+			}
+			else
+			{
+			   count = 5 ;
+			   chip->aicl_in_500_flag = 0 ;
+			}
+		    #endif
+			mutex_unlock(&chip->aicl_lock);/*Mofei@EXP.BaseDrv.charge,2016/03/16 add for aicl */
 			return 0;
 		}
 	}
@@ -512,6 +566,8 @@ int bq24196_set_input_chg_current(struct opchg_charger *chip, int iusbin_mA, boo
 				chip->aicl_working = false;
 				bq24196_usb_plugout_check_whenaicl(chip);
 				chip->is_charger_det = 0;
+				count = 5;
+				mutex_unlock(&chip->aicl_lock);/*Mofei@EXP.BaseDrv.charge,2016/03/16 add for aicl */
 				return 0;
 			}
 		}
@@ -523,6 +579,7 @@ int bq24196_set_input_chg_current(struct opchg_charger *chip, int iusbin_mA, boo
 			chip->aicl_working = false;
 			pr_err("%s aicl end 1200ma_1,iusbmax:%d set input current is end\n",__func__,iusbmax);
 			chip->is_charger_det = 0;
+			mutex_unlock(&chip->aicl_lock);/*Mofei@EXP.BaseDrv.charge,2016/03/16 add for aicl */
 			return 0;
 		}
 	}
@@ -548,6 +605,8 @@ int bq24196_set_input_chg_current(struct opchg_charger *chip, int iusbin_mA, boo
 			chip->aicl_working = false;
 			bq24196_usb_plugout_check_whenaicl(chip);
 			chip->is_charger_det = 0;
+			count = 5;
+			mutex_unlock(&chip->aicl_lock);/*Mofei@EXP.BaseDrv.charge,2016/03/16 add for aicl */
 			return 0;
 		}
 	}
@@ -558,6 +617,8 @@ int bq24196_set_input_chg_current(struct opchg_charger *chip, int iusbin_mA, boo
 		chip->aicl_working = false;
 		pr_err("%s aicl end 1500ma_1,iusbmax:%d set input current is end\n",__func__,iusbmax);
 		chip->is_charger_det = 0;
+		count = 5;
+		mutex_unlock(&chip->aicl_lock);/*Mofei@EXP.BaseDrv.charge,2016/03/16 add for aicl */
 		return 0;
 	}
 
@@ -584,6 +645,7 @@ int bq24196_set_input_chg_current(struct opchg_charger *chip, int iusbin_mA, boo
 	chip->aicl_working = false;
 	pr_err("%s aicl end 2000ma,iusbmax:%d set input current is end\n",__func__,iusbmax);
     chip->is_charger_det = 0;
+     	mutex_unlock(&chip->aicl_lock);/*Mofei@EXP.BaseDrv.charge,2016/03/16 add for aicl */
     return 0;
 }
 
