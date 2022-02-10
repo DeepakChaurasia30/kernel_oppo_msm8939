@@ -195,8 +195,11 @@ int opchg_get_prop_battery_voltage_now(struct opchg_charger *chip)
 		//battery voltage sampling Compensation
 		if(is_project(OPPO_15109) || is_project(OPPO_15399))
 		{
+		    #ifdef CONFIG_MACH_OPPO 
              /*chaoying.chen@EXP.BaseDrv.charge,2015/12/14 modify for battery voltage */
+		    if(chip->chg_present == false)
 				V_battery += 25*1000;
+			#endif
 		}
 	}
 	else if(is_project(OPPO_14005) || is_project(OPPO_15011) || is_project(OPPO_15018)|| is_project(OPPO_15022))

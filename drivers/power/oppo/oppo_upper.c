@@ -99,7 +99,17 @@ static void opchg_external_power_changed(struct power_supply *psy)
 	}
 
     opchg_set_enable_volatile_writes(chip);
- 	opchg_config_input_chg_current(chip, INPUT_CURRENT_LCD, chip->limit_current_max_ma);
+ 	#ifdef CONFIG_MACH_OPPO
+	/*MoFei@EXP.BaseDrv.charge,2016/05/07 modify for avoiding current change frequently when lcd is always on  */
+	if(chip->is_lcd_on == true){
+        if(is_project(OPPO_15399))
+		opchg_config_input_chg_current(chip, INPUT_CURRENT_LCD, LCD_ON_CHARGING_INPUT_CURRENT_15399);
+	}
+	else{
+		if(is_project(OPPO_15399))
+		opchg_config_input_chg_current(chip, INPUT_CURRENT_LCD, LCD_OFF_CHARGING_INPUT_CURRENT_15399);
+	}
+	#endif
 	opchg_config_input_chg_current(chip, INPUT_CURRENT_CAMERA, chip->limit_current_max_ma);
     opchg_config_input_chg_current(chip, INPUT_CURRENT_BY_POWER, current_limit);
 
