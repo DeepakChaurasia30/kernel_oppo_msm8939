@@ -2998,9 +2998,16 @@ static int calculate_initial_soc(struct qpnp_bms_chip *chip)
 		 /* !warm_reset use PON OCV only if shutdown SOC is invalid */
 		chip->calculated_soc = lookup_soc_ocv(chip,
 					chip->last_ocv_uv, batt_temp);
+#ifndef CONFIG_MACH_OPPO
+/* OPPO MoFei@EXP.BaseDrv.charge,2016/05/04 motify for soc jump after power on */
 		if (!chip->shutdown_soc_invalid &&
 			(abs(chip->shutdown_soc - chip->calculated_soc) <
 				chip->dt.cfg_shutdown_soc_valid_limit)) {
+#else
+		if (!chip->shutdown_soc_invalid &&
+			(abs(chip->shutdown_soc - chip->calculated_soc) <=
+				chip->dt.cfg_shutdown_soc_valid_limit)) {
+#endif
 			chip->last_ocv_uv = chip->shutdown_ocv;
 			chip->last_soc = chip->shutdown_soc;
 #ifndef CONFIG_MACH_OPPO
