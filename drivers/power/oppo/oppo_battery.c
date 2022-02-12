@@ -1045,6 +1045,7 @@ void opchg_check_lcd_onoff(struct opchg_charger *chip)
 		else if (is_project(OPPO_15399))
 		{
 			opchg_config_input_chg_current(chip, INPUT_CURRENT_LCD, LCD_ON_CHARGING_INPUT_CURRENT_15399);
+			chip->is_lcd_on2off = 1;/*Mofei@EXP.BaseDrv.charge,2016/03/21 add for aicl when lcd is on to off */
 
 		}
 		else if (is_project(OPPO_15018) || is_project(OPPO_15022)) {
