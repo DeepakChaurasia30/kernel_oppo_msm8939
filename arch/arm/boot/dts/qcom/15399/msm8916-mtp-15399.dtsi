@@ -223,7 +223,7 @@
 			vcc_i2c_opcharger-supply = <&pm8916_l5>;
 
 			qcom,irq-gpio = <&msm_gpio 62 0x00>;
-			qcom,usbin-switch-gpio = <&pm8916_gpios 3 0>;
+			//qcom,usbin-switch-gpio = <&pm8916_gpios 3 0>;
 
 			qcom,disable-apsd;
 			qcom,using-pmic-therm;
