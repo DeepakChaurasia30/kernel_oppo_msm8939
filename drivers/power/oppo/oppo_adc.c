@@ -237,6 +237,7 @@ int opchg_get_prop_batt_temp(struct opchg_charger *chip)
 			return 0;
 		}
 		T_battery = (int)results.physical;
+ 		T_battery = T_battery - 100; /* temperature conpensation for 15399 */		
 	}
 	else if(is_project(OPPO_14005)|| is_project(OPPO_15011)|| is_project(OPPO_15018)|| is_project(OPPO_15022))
 	{
