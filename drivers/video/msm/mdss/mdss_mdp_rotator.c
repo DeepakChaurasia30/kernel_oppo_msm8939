@@ -292,11 +292,6 @@ static int mdss_mdp_rotator_queue_sub(struct mdss_mdp_rotator_session *rot,
 		goto error;
 	}
 
-	if(ret){
-		pr_err("mdss_mdp_rotator_kickoff error : %d\n", ret);
-		goto error;
-	}
-
 	return ret;
 error:
 	if (orig_ctl->shared_lock)
