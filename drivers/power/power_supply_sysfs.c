@@ -44,9 +44,9 @@ static ssize_t power_supply_show_property(struct device *dev,
 					  struct device_attribute *attr,
 					  char *buf) {
 	static char *type_text[] = {
-		"Unknown", "Battery", "UPS", "Mains", "USB", "USB_DCP",
-		"USB_CDP", "USB_ACA",
-		"USB_HVDCP", "USB_HVDCP3", "Wireless", "BMS", "USB_Parallel"
+		"Unknown", "Battery", "UPS", "Mains", "USB",
+		"USB_DCP", "USB_CDP", "USB_ACA", "Wireless", "BMS",
+		"USB_Parallel"
 	};
 	static char *status_text[] = {
 		"Unknown", "Charging", "Discharging", "Not charging", "Full"
@@ -144,7 +144,6 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(present),
 	POWER_SUPPLY_ATTR(online),
 	POWER_SUPPLY_ATTR(authentic),
-	POWER_SUPPLY_ATTR(battery_charging_enabled),
 	POWER_SUPPLY_ATTR(charging_enabled),
 	POWER_SUPPLY_ATTR(technology),
 	POWER_SUPPLY_ATTR(cycle_count),
@@ -209,13 +208,13 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(resistance),
 	POWER_SUPPLY_ATTR(resistance_capacitive),
 	POWER_SUPPLY_ATTR(resistance_id),
-	POWER_SUPPLY_ATTR(resistance_now),
 	/* Local extensions */
 	POWER_SUPPLY_ATTR(usb_hc),
 	POWER_SUPPLY_ATTR(usb_otg),
 	POWER_SUPPLY_ATTR(charge_enabled),
 #ifdef CONFIG_MACH_OPPO
-	POWER_SUPPLY_ATTR(authenticate),
+/* jingchun.wang@Onlinerd.Driver, 2013/12/16  Add for charge timeout */
+	POWER_SUPPLY_ATTR(authenticate),//wangjc add for authentication
 	POWER_SUPPLY_ATTR(charge_timeout),
 	POWER_SUPPLY_ATTR(fastcharger),
 	POWER_SUPPLY_ATTR(charge_temp_statu),
@@ -227,17 +226,30 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(batt_cc),
 	POWER_SUPPLY_ATTR(charger_enable),
 	POWER_SUPPLY_ATTR(BatteryNotify),
+#endif
+#ifdef CONFIG_MACH_OPPO
+//Fuchun.Liao@Mobile.BSP.CHG 2015-02-13 add for otg_switch in 14043
+	POWER_SUPPLY_ATTR(otg_switch),
+#endif
+	#ifdef CONFIG_MACH_OPPO
+	/* ChaoYing.Chen@EXP.BSP.USB.OTG, 2017/05/23, Add for OTG online */
+	POWER_SUPPLY_ATTR(otg_online),
+	#endif /* CONFIG_MACH_OPPO */
+#ifdef CONFIG_MACH_OPPO
+//Fuchun.Liao@Mobile.BSP.CHG 2015-05-27add for power_off when vbat is too low
 	POWER_SUPPLY_ATTR(power_off),
 #endif
+#ifdef CONFIG_MACH_OPPO
+/* OPPO 2015-08-25 sjc Add for shipping_mode */
+	POWER_SUPPLY_ATTR(shipping_mode),
+#endif
 	POWER_SUPPLY_ATTR(flash_current_max),
-	POWER_SUPPLY_ATTR(update_now),
-	POWER_SUPPLY_ATTR(esr_count),
-	POWER_SUPPLY_ATTR(dp_dm),
-	POWER_SUPPLY_ATTR(input_current_limited),
-	POWER_SUPPLY_ATTR(ignore_false_negative_isense),
-	POWER_SUPPLY_ATTR(enable_jeita_detection),
 	/* Local extensions of type int64_t */
 	POWER_SUPPLY_ATTR(charge_counter_ext),
+#ifdef CONFIG_MACH_OPPO
+/*chaoying.chen@EXP.BaseDrv.charge,2016/02/16 add internal capacity node for 15399 */
+		POWER_SUPPLY_ATTR(internal_capacity),
+#endif //CONFIG_MACH_OPPO
 	/* Properties of type `const char *' */
 	POWER_SUPPLY_ATTR(model_name),
 	POWER_SUPPLY_ATTR(manufacturer),

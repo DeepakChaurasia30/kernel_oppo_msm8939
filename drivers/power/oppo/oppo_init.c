@@ -554,7 +554,17 @@ static int opcharger_charger_probe(struct i2c_client *client, const struct i2c_d
 	chip->multiple_test = 0;
 	opchg_config_suspend_enable(chip, FACTORY_ENABLE, 0);
 
-	chip->batt_authen = 1;
+#ifdef CONFIG_MACH_OPPO
+    //MoFei@EXP.BaseDrv.charge,2016-02-29 add for identification of non_standerd battery
+	else if (is_project(OPPO_15399))
+	{
+		chip->batt_authen = oppo_battery_status_init(1);
+	}
+	#endif  /*CONFIG_MACH_OPPO*/
+	else
+	{
+		chip->batt_authen = 1;
+	}
 
 	if(chip->driver_id == OPCHG_BQ24196_ID)
 	{
